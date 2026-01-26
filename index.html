@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="图形学系列教程 - 用通俗易懂的方式学习计算机图形学">
+    <meta name="keywords" content="图形学, 教程, 渲染, shader, 计算机图形学">
+    <meta name="author" content="Graphics Tutorial">
+    <meta name="theme-color" content="#8B4513">
+    
+    <title>图形学系列教程</title>
+    
+    <!-- CSS 样式文件 -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/book.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- 加载动画 - 图书主题 -->
+    <div id="loading" class="loading-container">
+        <div class="loading-book-wrapper">
+            <!-- 书籍主体 -->
+            <div class="loading-book">
+                <!-- 书脊 -->
+                <div class="loading-book-spine"></div>
+                <!-- 书籍封面 -->
+                <div class="loading-book-cover">
+                    <div class="loading-book-cover-inner">
+                        <span class="loading-book-title">图形学</span>
+                    </div>
+                </div>
+                <!-- 翻动的书页 -->
+                <div class="loading-pages">
+                    <div class="loading-page loading-page-1"></div>
+                    <div class="loading-page loading-page-2"></div>
+                    <div class="loading-page loading-page-3"></div>
+                    <div class="loading-page loading-page-4"></div>
+                </div>
+                <!-- 书籍底部（书页堆叠效果） -->
+                <div class="loading-book-pages-stack"></div>
+            </div>
+        </div>
+        <p class="loading-text">正在打开书籍<span class="loading-dots">...</span></p>
+        <div class="loading-progress">
+            <div class="loading-progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div id="app" class="app-container">
+        <!-- 书籍容器 -->
+        <div id="book" class="book-container">
+            <!-- 封面页 -->
+            <div id="cover" class="book-cover">
+                <div class="cover-spine"></div>
+                <div class="cover-front">
+                    <div class="cover-content">
+                        <h1 class="cover-title">图形学系列教程</h1>
+                        <p class="cover-subtitle">用通俗易懂的方式<br>探索计算机图形学的奥秘</p>
+                        <div class="cover-decoration"></div>
+                        <button id="enter-btn" class="cover-enter-btn">开始阅读</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 目录页 -->
+            <div id="toc" class="book-toc hidden">
+                <div class="toc-header">
+                    <h2>目录</h2>
+                    <button id="toc-close-btn" class="toc-close-btn">返回封面</button>
+                </div>
+                <div class="toc-content">
+                    <!-- 目录内容将由 JavaScript 动态生成 -->
+                </div>
+            </div>
+
+            <!-- 内容页容器 -->
+            <div id="content" class="book-content hidden">
+                <!-- 左页（双页视图时显示） -->
+                <div class="page page-left">
+                    <div class="page-inner">
+                        <div class="page-content"></div>
+                        <div class="page-footer">
+                            <span class="page-number"></span>
+                        </div>
+                    </div>
+                    <div class="page-edge"></div>
+                </div>
+                
+                <!-- 右页 -->
+                <div class="page page-right">
+                    <div class="page-inner">
+                        <div class="page-content"></div>
+                        <div class="page-footer">
+                            <span class="page-number"></span>
+                        </div>
+                    </div>
+                    <div class="page-edge"></div>
+                </div>
+            </div>
+
+            <!-- 导航控制 -->
+            <div id="navigation" class="book-navigation hidden">
+                <button id="nav-prev" class="nav-btn nav-prev" aria-label="上一页">
+                    <span class="nav-icon">‹</span>
+                </button>
+                <button id="nav-next" class="nav-btn nav-next" aria-label="下一页">
+                    <span class="nav-icon">›</span>
+                </button>
+                <div class="nav-info">
+                    <button id="nav-toc" class="nav-toc-btn" aria-label="返回目录">目录</button>
+                    <span id="nav-chapter" class="nav-chapter"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 继续阅读提示 -->
+    <div id="continue-reading" class="continue-reading-modal hidden">
+        <div class="modal-content">
+            <p>检测到上次阅读进度</p>
+            <p class="modal-chapter"></p>
+            <div class="modal-buttons">
+                <button id="continue-yes" class="modal-btn modal-btn-primary">继续阅读</button>
+                <button id="continue-no" class="modal-btn modal-btn-secondary">从头开始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 脚本文件 -->
+    <script src="js/storage.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/book.js"></script>
+    <script src="js/app.js"></script>
+    <!-- 交互演示脚本 -->
+    <script src="js/demos/lens-demo.js"></script>
+    <script src="js/demos/lighting-demo.js"></script>
+    <script src="js/demos/bump-demo.js"></script>
+    <script src="js/demos/sketch-demo.js"></script>
+    <script src="js/demos/blur-demo.js"></script>
+    <script src="js/demos/refraction-demo.js"></script>
+    <script src="js/demos/magnify-demo.js"></script>
+    <script src="js/demos/minify-demo.js"></script>
+    <script src="js/demos/sword-demo.js"></script>
+    <script src="js/demos/mvp-demo.js"></script>
+    <script src="js/demos/noise-demo.js"></script>
+    <script src="js/demos/sea-demo.js"></script>
+    <script src="js/demos/uv-demo.js"></script>
+    <script src="js/demos/bloom-demo.js"></script>
+    <script src="js/demos/outline-demo.js"></script>
+    <script src="js/demos/depth-demo.js"></script>
+    <script src="js/demos/quaternion-demo.js"></script>
+    <script src="js/demos/postprocess-demo.js"></script>
+</body>
+</html>

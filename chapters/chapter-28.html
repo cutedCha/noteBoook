@@ -1,0 +1,233 @@
+<h2>旋转矩阵</h2>
+
+<p>在上一章中，我们学习了矩阵可以用来做空间变换。今天我们要深入探讨其中最有趣的一个：<strong>旋转</strong>。让物体转起来，听起来简单，但背后的数学却相当精妙！</p>
+
+<h3>旋转的三要素</h3>
+
+<p>要描述一个旋转，我们需要知道三件事：</p>
+
+<ul>
+  <li><strong>旋转轴</strong>：绕着什么转？</li>
+  <li><strong>旋转角度</strong>：转多少度？</li>
+  <li><strong>旋转中心</strong>：以哪个点为中心转？</li>
+</ul>
+
+<blockquote>
+<p>想象你在转动一个地球仪。旋转轴是那根穿过南北极的杆子，旋转中心是地球的中心，旋转角度就是你转了多少。</p>
+</blockquote>
+
+<h3>绕坐标轴旋转</h3>
+
+<p>最简单的旋转是绕X、Y、Z轴旋转。让我们看看这三个旋转矩阵：</p>
+
+<pre><code class="language-javascript">// 绕X轴旋转θ角度
+function rotateX(theta) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return [
+    [1, 0,  0, 0],
+    [0, c, -s, 0],
+    [0, s,  c, 0],
+    [0, 0,  0, 1]
+  ];
+}
+
+// 绕Y轴旋转θ角度
+function rotateY(theta) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return [
+    [ c, 0, s, 0],
+    [ 0, 1, 0, 0],
+    [-s, 0, c, 0],
+    [ 0, 0, 0, 1]
+  ];
+}
+
+// 绕Z轴旋转θ角度
+function rotateZ(theta) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return [
+    [c, -s, 0, 0],
+    [s,  c, 0, 0],
+    [0,  0, 1, 0],
+    [0,  0, 0, 1]
+  ];
+}</code></pre>
+
+<p>注意到了吗？每个旋转矩阵都只用到了<strong>sin</strong>和<strong>cos</strong>。这不是巧合——旋转的本质就是三角函数！</p>
+
+<h3>为什么是sin和cos？</h3>
+
+<p>让我们用2D旋转来理解这个问题：</p>
+
+<blockquote>
+<p>想象一个点在圆上运动。当它转过角度θ时，它的新位置可以用三角函数表示：新的x = 原来的x × cos(θ) - 原来的y × sin(θ)，新的y = 原来的x × sin(θ) + 原来的y × cos(θ)。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 2D旋转的直观理解
+function rotate2D(point, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  
+  return {
+    x: point.x * cos - point.y * sin,
+    y: point.x * sin + point.y * cos
+  };
+}
+
+// 把点(1, 0)旋转90度
+const result = rotate2D({x: 1, y: 0}, Math.PI / 2);
+// result ≈ { x: 0, y: 1 }  点从右边转到了上边！</code></pre>
+
+<h3>旋转的顺序很重要！</h3>
+
+<p>这是旋转最容易让人困惑的地方：<strong>旋转的顺序不同，结果也不同</strong>！</p>
+
+<pre><code class="language-javascript">// 先绕X轴转，再绕Y轴转
+const rotationA = multiply(rotateY(90), rotateX(90));
+
+// 先绕Y轴转，再绕X轴转
+const rotationB = multiply(rotateX(90), rotateY(90));
+
+// rotationA 和 rotationB 是不同的！</code></pre>
+
+<blockquote>
+<p>生活类比：拿起你的手机，先向右倾斜90度，再向前倾斜90度。然后重新开始，先向前倾斜90度，再向右倾斜90度。你会发现手机最终的朝向完全不同！</p>
+</blockquote>
+
+<p>这在数学上叫做"旋转不满足交换律"，是3D图形编程中常见的坑。</p>
+
+<h3>绕任意点旋转</h3>
+
+<p>默认情况下，旋转矩阵是绕原点(0,0,0)旋转的。但如果我们想绕其他点旋转呢？</p>
+
+<p>答案是：<strong>平移 → 旋转 → 平移回来</strong>！</p>
+
+<pre><code class="language-javascript">// 绕点P旋转
+function rotateAroundPoint(point, axis, angle) {
+  // 1. 先把旋转中心移到原点
+  const toOrigin = createTranslationMatrix(-point.x, -point.y, -point.z);
+  
+  // 2. 执行旋转
+  const rotation = createRotationMatrix(axis, angle);
+  
+  // 3. 再移回原来的位置
+  const backToPoint = createTranslationMatrix(point.x, point.y, point.z);
+  
+  // 组合这三个变换
+  return multiply(backToPoint, multiply(rotation, toOrigin));
+}
+
+// 绕点(5, 0, 0)旋转45度
+const matrix = rotateAroundPoint({x:5, y:0, z:0}, 'Y', Math.PI/4);</code></pre>
+
+<blockquote>
+<p>生活类比：想象你要让一扇门绕着门轴转动。门轴不在原点，所以你需要先"假装"把门轴移到原点，转动门，再把门轴移回去。</p>
+</blockquote>
+
+<h3>欧拉角：描述旋转的直观方式</h3>
+
+<p>在游戏和3D软件中，我们经常用<strong>欧拉角</strong>来描述旋转——就是分别绕X、Y、Z轴旋转的角度：</p>
+
+<pre><code class="language-javascript">// 欧拉角：(pitch, yaw, roll)
+// pitch: 俯仰角（点头）- 绕X轴
+// yaw: 偏航角（摇头）- 绕Y轴  
+// roll: 翻滚角（歪头）- 绕Z轴
+
+function eulerToMatrix(pitch, yaw, roll) {
+  const rx = rotateX(pitch);
+  const ry = rotateY(yaw);
+  const rz = rotateZ(roll);
+  
+  // 注意：顺序通常是 Y * X * Z 或其他约定
+  return multiply(ry, multiply(rx, rz));
+}
+
+// 飞机的姿态控制
+const planeRotation = eulerToMatrix(
+  pitchAngle,  // 抬头/低头
+  yawAngle,    // 左转/右转
+  rollAngle    // 左倾/右倾
+);</code></pre>
+
+<h3>万向节死锁：欧拉角的陷阱</h3>
+
+<p>欧拉角有一个著名的问题叫<strong>万向节死锁（Gimbal Lock）</strong>：当某个轴旋转90度时，会丢失一个自由度。</p>
+
+<blockquote>
+<p>想象你把头向上仰90度看天花板，这时候"左右转头"和"左右歪头"变成了同一个动作！你丢失了一个旋转方向。</p>
+</blockquote>
+
+<p>这就是为什么专业的3D软件和游戏引擎通常使用<strong>四元数</strong>来表示旋转，而不是欧拉角。</p>
+
+<h3>🎮 动手试试：四元数 vs 欧拉角插值</h3>
+
+<p>看看从姿态A到姿态B的旋转过程中，两种插值方式的区别：</p>
+
+<div class="interactive-demo" id="quaternion-demo" data-demo="quaternion">
+  <canvas id="quaternionCanvas" width="350" height="280"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="quatAutoPlay" checked>
+        <span>自动播放</span>
+      </label>
+      <button id="quatReset" class="mvp-btn">重置</button>
+    </div>
+    <div class="control-group">
+      <label>插值进度：<span id="quatTValue">0%</span></label>
+      <input type="range" id="quatT" min="0" max="1" step="0.01" value="0">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>为什么四元数更平滑？</strong></p>
+  <ul>
+    <li><strong style="color: #ff6b6b;">欧拉角插值</strong>：分别对X、Y、Z角度做线性插值，路径可能绕远路或抖动</li>
+    <li><strong style="color: #51cf66;">四元数插值</strong>：在4D超球面上走最短弧线（Slerp），路径始终平滑</li>
+    <li>虚线显示了一个顶点的运动轨迹——四元数的轨迹更圆滑！</li>
+    <li>四元数没有万向节死锁问题，是动画系统的首选</li>
+  </ul>
+</blockquote>
+
+<h3>旋转矩阵的特殊性质</h3>
+
+<p>旋转矩阵有一些很酷的数学性质：</p>
+
+<ol>
+  <li><strong>正交性</strong>：矩阵的转置等于它的逆</li>
+  <li><strong>行列式为1</strong>：不会改变物体的大小</li>
+  <li><strong>保持距离</strong>：旋转后点之间的距离不变</li>
+</ol>
+
+<pre><code class="language-javascript">// 旋转矩阵的逆 = 旋转矩阵的转置
+// 这意味着"反向旋转"很容易计算！
+
+function inverseRotation(rotationMatrix) {
+  // 只需要转置矩阵（行列互换）
+  return transpose(rotationMatrix);
+}
+
+// 旋转45度，再反向旋转45度，回到原位
+const rotate45 = rotateY(Math.PI / 4);
+const rotateBack = inverseRotation(rotate45);
+const combined = multiply(rotateBack, rotate45);
+// combined 约等于单位矩阵（什么都不做）</code></pre>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>旋转需要指定旋转轴、角度和中心点</li>
+  <li>旋转矩阵的核心是sin和cos函数</li>
+  <li>旋转的顺序很重要，不同顺序结果不同</li>
+  <li>绕任意点旋转 = 平移到原点 → 旋转 → 平移回去</li>
+  <li>欧拉角直观但有万向节死锁问题</li>
+  <li>旋转矩阵的逆等于它的转置</li>
+</ol>
+
+<p>掌握了旋转矩阵，你就理解了3D变换中最复杂的部分。下一章，我们将学习<strong>MVP矩阵</strong>——它把模型从3D世界变换到你的屏幕上，是渲染流水线的核心！</p>

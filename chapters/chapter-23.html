@@ -1,0 +1,120 @@
+<h2>纹理传递的不一定是图片</h2>
+
+<p>当我们提到"纹理"这个词时，你脑海中浮现的可能是一张漂亮的图片——木纹、砖墙、或者角色的皮肤。但在图形学的世界里，<strong>纹理远不止是图片那么简单</strong>。</p>
+
+<h3>纹理的本质：数据的载体</h3>
+
+<p>让我们换一个角度来理解纹理。想象纹理是一个<strong>快递包裹</strong>：</p>
+
+<blockquote>
+<p>快递包裹可以装衣服、书籍、食物……任何你想寄送的东西。同样，纹理这个"包裹"可以装颜色信息、法线方向、噪声数据……任何GPU需要的信息。</p>
+</blockquote>
+
+<p>纹理的本质是一个<strong>二维数组</strong>，每个位置存储着一些数值。这些数值可以代表：</p>
+
+<ul>
+  <li><strong>颜色</strong>：最常见的用法，RGBA四个通道</li>
+  <li><strong>法线方向</strong>：用于凹凸效果</li>
+  <li><strong>噪声值</strong>：用于各种随机效果</li>
+  <li><strong>高度信息</strong>：用于地形或位移贴图</li>
+  <li><strong>任意数据</strong>：只要你能想到的</li>
+</ul>
+
+<h3>法线纹理：让平面"长出"凹凸</h3>
+
+<p>还记得我们在第3章讲的凹凸映射吗？法线纹理就是实现它的关键工具。</p>
+
+<p>法线纹理看起来是蓝紫色的奇怪图片，但它存储的不是颜色，而是<strong>每个像素点的法线方向</strong>。</p>
+
+<pre><code class="language-javascript">// 法线纹理的数据解读
+function decodeNormalFromTexture(texelColor) {
+  // 纹理中的RGB值范围是0-1
+  // 需要转换到法线向量的-1到1范围
+  
+  const normal = {
+    x: texelColor.r * 2.0 - 1.0,  // R通道 -> X方向
+    y: texelColor.g * 2.0 - 1.0,  // G通道 -> Y方向
+    z: texelColor.b * 2.0 - 1.0   // B通道 -> Z方向（通常朝上，所以偏蓝）
+  };
+  
+  return normalize(normal);
+}
+
+// 为什么法线贴图看起来是蓝色的？
+// 因为大部分表面的法线朝上（Z方向）
+// Z=1 转换后 B=(1+1)/2=1，所以蓝色通道最强</code></pre>
+
+<h3>噪声纹理：随机的艺术</h3>
+
+<p>在第17章我们学习了噪声，但每次在shader中计算噪声很耗性能。聪明的做法是：<strong>把噪声预先"烘焙"到纹理里</strong>。</p>
+
+<blockquote>
+<p>这就像是提前做好的速冻饺子——虽然不如现包的新鲜，但方便快捷，味道也不差！</p>
+</blockquote>
+
+<pre><code class="language-glsl">// 使用噪声纹理扭曲UV
+uniform sampler2D noiseTexture;
+uniform float distortStrength;
+uniform float time;
+
+vec2 distortUV(vec2 uv) {
+  // 从噪声纹理采样
+  vec2 noiseUV = uv + vec2(time * 0.1, 0.0);
+  vec4 noise = texture2D(noiseTexture, noiseUV);
+  
+  // 用噪声值偏移原始UV
+  vec2 offset = (noise.rg - 0.5) * 2.0 * distortStrength;
+  
+  return uv + offset;
+}
+
+void main() {
+  vec2 distortedUV = distortUV(v_uv);
+  vec4 color = texture2D(mainTexture, distortedUV);
+  gl_FragColor = color;
+}</code></pre>
+
+<h3>实际应用：水面波纹效果</h3>
+
+<p>让我们用噪声纹理来制作一个水面波纹效果：</p>
+
+<pre><code class="language-javascript">// 水面波纹shader配置
+const waterMaterial = {
+  uniforms: {
+    mainTexture: { value: sceneTexture },
+    noiseTexture: { value: perlinNoiseTexture },
+    distortStrength: { value: 0.02 },
+    time: { value: 0 }
+  },
+  
+  update: function(deltaTime) {
+    this.uniforms.time.value += deltaTime;
+  }
+};
+
+// 噪声纹理让水面产生自然的扭曲
+// 随时间变化，波纹就会"流动"起来</code></pre>
+
+<h3>更多纹理的妙用</h3>
+
+<p>纹理作为数据载体，还有很多创意用法：</p>
+
+<ul>
+  <li><strong>渐变纹理（Ramp Texture）</strong>：控制卡通渲染的明暗过渡</li>
+  <li><strong>遮罩纹理（Mask Texture）</strong>：控制哪些区域应用特效</li>
+  <li><strong>流动纹理（Flow Map）</strong>：控制水流或风的方向</li>
+  <li><strong>查找表（LUT）</strong>：用于颜色校正和风格化</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>纹理的本质是二维数据数组，不仅仅是图片</li>
+  <li>法线纹理存储表面方向信息，用于凹凸效果</li>
+  <li>噪声纹理可以预存随机数据，用于各种扭曲效果</li>
+  <li>纹理是GPU传递任意数据的通用方式</li>
+</ol>
+
+<p>理解了纹理的本质，你就能更灵活地使用它来实现各种效果。下一章，我们将探讨<strong>渲染流水线的不同形式</strong>——前向渲染和延迟渲染的区别！</p>

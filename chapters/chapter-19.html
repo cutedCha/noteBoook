@@ -1,0 +1,167 @@
+<h2>UV是什么</h2>
+
+<p>我们之前学过纹理是3D模型的"皮肤"，但有个问题：怎么把一张平面的图片"贴"到立体的模型上？答案就是<strong>UV坐标</strong>。</p>
+
+<h3>🎮 动手试试：UV的真面目</h3>
+
+<p>这就是UV坐标的真面目——瞧它真漂亮呢！</p>
+
+<div class="interactive-demo" id="uv-demo" data-demo="uv">
+  <canvas id="uvCanvas" width="200" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="control-group">
+      <label>平铺：<span id="uvTilingValue">1x</span></label>
+      <input type="range" id="uvTiling" min="1" max="4" step="1" value="1">
+    </div>
+    <div class="control-group">
+      <label>U偏移：<span id="uvOffsetUValue">0.00</span></label>
+      <input type="range" id="uvOffsetU" min="0" max="1" step="0.05" value="0">
+    </div>
+    <div class="control-group">
+      <label>V偏移：<span id="uvOffsetVValue">0.00</span></label>
+      <input type="range" id="uvOffsetV" min="0" max="1" step="0.05" value="0">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>为什么是这个颜色？</strong></p>
+  <ul>
+    <li><strong>U坐标</strong>（水平）映射到<span style="color:#ff6666">红色</span>通道：左边U=0（黑），右边U=1（红）</li>
+    <li><strong>V坐标</strong>（垂直）映射到<span style="color:#66ff66">绿色</span>通道：下边V=0（黑），上边V=1（绿）</li>
+    <li>所以：左下<strong>黑色</strong>，右下<strong>红色</strong>，左上<strong>绿色</strong>，右上<strong>黄色</strong>（红+绿）</li>
+  </ul>
+  <p>这张图在3D软件中经常用来检查UV展开是否正确——如果模型上出现颜色断裂或拉伸，说明UV有问题！</p>
+</blockquote>
+
+<h3>UV：纹理的"地图"</h3>
+
+<p>想象你要给一个地球仪贴上世界地图：</p>
+
+<ul>
+  <li>地球仪是3D的球体</li>
+  <li>世界地图是2D的平面</li>
+  <li>你需要知道地球仪上每个点对应地图上的哪个位置</li>
+</ul>
+
+<blockquote>
+<p>UV坐标就是这个"对应关系"——它告诉GPU，模型上的每个点应该从纹理的哪个位置取颜色。</p>
+</blockquote>
+
+<h3>为什么叫UV？</h3>
+
+<p>因为XYZ已经被3D空间坐标占用了，所以纹理坐标用U和V表示：</p>
+
+<ul>
+  <li><strong>U</strong>：水平方向，从左(0)到右(1)</li>
+  <li><strong>V</strong>：垂直方向，从下(0)到上(1)</li>
+</ul>
+
+<pre><code class="language-javascript">// UV坐标示例
+const uvCoordinates = {
+  leftBottom:  { u: 0, v: 0 },  // 纹理左下角
+  rightBottom: { u: 1, v: 0 },  // 纹理右下角
+  leftTop:     { u: 0, v: 1 },  // 纹理左上角
+  rightTop:    { u: 1, v: 1 }   // 纹理右上角
+};</code></pre>
+
+<h3>UV展开：3D到2D的映射</h3>
+
+<p>把3D模型的表面"展开"成2D平面的过程叫做<strong>UV展开</strong>：</p>
+
+<blockquote>
+<p>想象把一个纸盒子拆开铺平，每个面都对应纸板上的一块区域。UV展开就是这个过程的数学描述。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 立方体的UV展开示例
+const cubeUVs = {
+  // 前面
+  front: [
+    { pos: [-1,-1, 1], uv: [0, 0] },
+    { pos: [ 1,-1, 1], uv: [1, 0] },
+    { pos: [ 1, 1, 1], uv: [1, 1] },
+    { pos: [-1, 1, 1], uv: [0, 1] }
+  ],
+  // 其他面类似...
+};</code></pre>
+
+<h3>UV的常见问题</h3>
+
+<p>UV映射中有一些常见的问题：</p>
+
+<ul>
+  <li><strong>接缝</strong>：展开时的切割线，可能导致纹理不连续</li>
+  <li><strong>拉伸</strong>：UV分布不均匀，导致纹理变形</li>
+  <li><strong>重叠</strong>：多个面共用同一块UV区域</li>
+</ul>
+
+<h3>Shader中使用UV</h3>
+
+<pre><code class="language-glsl">// 顶点着色器
+attribute vec2 a_TexCoord;  // UV坐标
+varying vec2 v_TexCoord;
+
+void main() {
+  v_TexCoord = a_TexCoord;  // 传递给片元着色器
+  gl_Position = u_MVP * a_Position;
+}
+
+// 片元着色器
+varying vec2 v_TexCoord;
+uniform sampler2D u_Texture;
+
+void main() {
+  // 用UV坐标采样纹理
+  gl_FragColor = texture2D(u_Texture, v_TexCoord);
+}</code></pre>
+
+<h3>UV动画</h3>
+
+<p>通过修改UV坐标，可以实现各种动画效果：</p>
+
+<pre><code class="language-glsl">// UV滚动动画（如传送带、水流）
+vec2 scrollUV(vec2 uv, float time, vec2 speed) {
+  return uv + speed * time;
+}
+
+// UV旋转动画
+vec2 rotateUV(vec2 uv, float angle) {
+  vec2 center = vec2(0.5, 0.5);
+  uv -= center;
+  
+  float s = sin(angle);
+  float c = cos(angle);
+  uv = vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+  
+  return uv + center;
+}
+
+// UV缩放动画
+vec2 scaleUV(vec2 uv, float scale) {
+  vec2 center = vec2(0.5, 0.5);
+  return (uv - center) * scale + center;
+}</code></pre>
+
+<h3>UV的高级应用</h3>
+
+<p>UV不只是用来贴图，还有很多创意用法：</p>
+
+<ul>
+  <li><strong>UV扭曲</strong>：用噪声扭曲UV，产生水波、热浪效果</li>
+  <li><strong>UV平铺</strong>：让纹理重复，覆盖大面积</li>
+  <li><strong>UV混合</strong>：根据UV位置混合多张纹理</li>
+  <li><strong>UV遮罩</strong>：用UV坐标控制效果的范围</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>UV坐标是纹理的"地图"，告诉GPU模型上每个点对应纹理的哪个位置</li>
+  <li>UV展开是把3D表面映射到2D平面的过程</li>
+  <li>通过修改UV坐标可以实现滚动、旋转、缩放等动画</li>
+  <li>UV有很多创意用法，不只是简单的贴图</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>Bloom光晕</strong>——让明亮的物体看起来在"发光"的效果！</p>

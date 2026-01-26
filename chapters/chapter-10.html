@@ -1,0 +1,121 @@
+<h2>法线是什么</h2>
+
+<p>在前面的章节中，我们多次提到"法线"这个词。它在光照计算中扮演着至关重要的角色。那么，法线到底是什么？为什么它这么重要？</p>
+
+<h3>法线：表面的"朝向"</h3>
+
+<p>想象你站在一面墙前：</p>
+
+<ul>
+  <li>墙面是<strong>平的</strong></li>
+  <li>有一根<strong>垂直于墙面</strong>的箭头，指向你</li>
+  <li>这根箭头就是墙面的<strong>法线</strong></li>
+</ul>
+
+<blockquote>
+<p>法线就是垂直于表面、指向外部的方向。它告诉我们"这个表面朝向哪里"。</p>
+</blockquote>
+
+<h3>为什么法线这么重要？</h3>
+
+<p>还记得我们讲过的光照原理吗？表面的亮度取决于<strong>光线方向</strong>和<strong>表面朝向</strong>的夹角。</p>
+
+<p>而"表面朝向"就是用法线来表示的！</p>
+
+<pre><code class="language-javascript">// 光照计算的核心
+function calculateLighting(normal, lightDirection) {
+  // 法线和光线方向的点积
+  // 决定了这个表面有多亮
+  const brightness = Math.max(0, dot(normal, lightDirection));
+  return brightness;
+}
+
+// 点积计算
+function dot(a, b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}</code></pre>
+
+<h3>顶点法线 vs 面法线</h3>
+
+<p>法线可以定义在不同的地方：</p>
+
+<h4>面法线</h4>
+<p>每个三角形有一个法线，整个三角形的亮度一样：</p>
+<ul>
+  <li>计算简单</li>
+  <li>但看起来有明显的棱角</li>
+</ul>
+
+<h4>顶点法线</h4>
+<p>每个顶点有一个法线，三角形内部的法线通过插值计算：</p>
+<ul>
+  <li>看起来更平滑</li>
+  <li>这就是为什么低面数模型也能看起来很光滑</li>
+</ul>
+
+<pre><code class="language-javascript">// 顶点法线的定义
+const vertex = {
+  position: { x: 0, y: 1, z: 0 },
+  // 法线是一个单位向量（长度为1）
+  normal: { x: 0, y: 1, z: 0 }  // 朝上
+};
+
+// 计算平滑法线：取相邻面法线的平均值
+function calculateSmoothNormal(vertex, adjacentFaces) {
+  let sumNormal = { x: 0, y: 0, z: 0 };
+  
+  for (const face of adjacentFaces) {
+    sumNormal.x += face.normal.x;
+    sumNormal.y += face.normal.y;
+    sumNormal.z += face.normal.z;
+  }
+  
+  // 归一化（让长度变成1）
+  return normalize(sumNormal);
+}</code></pre>
+
+<h3>法线贴图</h3>
+
+<p>我们之前讲过凹凸映射，它的进化版就是<strong>法线贴图</strong>：</p>
+
+<ul>
+  <li>把"假装的"法线存储在一张图片里</li>
+  <li>图片的RGB值对应法线的XYZ分量</li>
+  <li>这样就能在平面上模拟复杂的凹凸细节</li>
+</ul>
+
+<pre><code class="language-glsl">// 在着色器中使用法线贴图
+vec3 normalFromMap = texture2D(u_NormalMap, v_TexCoord).rgb;
+
+// 法线贴图的值范围是0-1，需要转换到-1到1
+normalFromMap = normalFromMap * 2.0 - 1.0;
+
+// 用这个法线来计算光照
+float brightness = max(0.0, dot(normalFromMap, lightDir));</code></pre>
+
+<h3>法线的可视化</h3>
+
+<p>如果你在3D软件中显示法线，会看到：</p>
+
+<ul>
+  <li>每个顶点或每个面上有一根小线段</li>
+  <li>线段指向表面的"外面"</li>
+  <li>法线方向错误会导致光照计算出问题（比如内外翻转）</li>
+</ul>
+
+<blockquote>
+<p>法线就像是表面上无数根小天线，告诉光线"我朝这边"。</p>
+</blockquote>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>法线是垂直于表面、指向外部的方向向量</li>
+  <li>法线在光照计算中决定了表面的亮度</li>
+  <li>顶点法线可以让低面数模型看起来更平滑</li>
+  <li>法线贴图可以在不增加顶点的情况下模拟复杂的表面细节</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>后屏幕渲染</strong>——一种在"眼睛前面"做特效的神奇技术！</p>

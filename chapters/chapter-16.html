@@ -1,0 +1,95 @@
+<h2>缩小镜原理</h2>
+
+<p>如果放大镜是"向外扭曲"，那么缩小镜就是"向内扭曲"。你可能在门上见过这种效果——那个让你能看到门外全景的小圆镜。</p>
+
+<h3>🎮 动手试试：缩小镜效果</h3>
+
+<p>拖动缩小镜移动位置，调节缩小强度和半径：</p>
+
+<div class="interactive-demo" id="minify-demo" data-demo="minify">
+  <canvas id="minifyCanvas" width="280" height="180"></canvas>
+  <div class="demo-controls">
+    <div class="control-group">
+      <label>缩小强度：<span id="minifyStrengthValue">0.5</span></label>
+      <input type="range" id="minifyStrength" min="0.1" max="0.9" step="0.1" value="0.5">
+    </div>
+    <div class="control-group">
+      <label>缩小镜半径：<span id="minifyRadiusValue">60</span></label>
+      <input type="range" id="minifyRadius" min="30" max="80" value="60">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+<p>💡 <strong>观察要点</strong>：</p>
+<ul>
+  <li>缩小镜内的图像被<strong>缩小</strong>了，网格线变得更密集</li>
+  <li>能在小区域内看到更大范围的内容</li>
+  <li>与放大镜相反，这是"向内扭曲"</li>
+  <li>门镜（猫眼）就是利用这个原理</li>
+</ul>
+</blockquote>
+
+<h3>门镜的秘密</h3>
+
+<p>门镜（猫眼）是一个<strong>凹透镜</strong>，它的特点是：</p>
+
+<ul>
+  <li>中间薄，边缘厚</li>
+  <li>光线穿过时会向外发散</li>
+  <li>能把更大范围的景象压缩到小区域内</li>
+</ul>
+
+<blockquote>
+<p>门镜让你站在门内，就能看到门外180度甚至更大范围的景象。这就是"向内扭曲"的魔力。</p>
+</blockquote>
+
+<h3>现实中的缩小效果</h3>
+
+<p>生活中有很多类似缩小镜的效果：</p>
+
+<ul>
+  <li><strong>门镜（猫眼）</strong>：看到门外的广角视野</li>
+  <li><strong>广角镜</strong>：汽车后视镜、安全镜</li>
+  <li><strong>凹面镜</strong>：勺子的背面看自己</li>
+  <li><strong>全景相机</strong>：360度拍摄后的投影</li>
+</ul>
+
+<h3>实现原理</h3>
+
+<p>缩小效果与放大相反，UV坐标向外扩张：</p>
+
+<ul>
+  <li>计算每个像素到缩小镜中心的距离</li>
+  <li>在缩小镜范围内，让UV坐标<strong>向外扩张</strong></li>
+  <li>扩张后的UV采样到更远离中心的像素，产生缩小效果</li>
+  <li>越靠近中心，扩张越大，缩小越明显</li>
+</ul>
+
+<h3>桶形畸变与枕形畸变</h3>
+
+<p>在相机镜头中，有两种常见的畸变：</p>
+
+<ul>
+  <li><strong>桶形畸变</strong>：图像向外膨胀，像装在桶里（广角镜头常见）</li>
+  <li><strong>枕形畸变</strong>：图像向内收缩，像枕头形状（长焦镜头常见）</li>
+</ul>
+
+<p>缩小镜效果类似于桶形畸变，而放大镜效果类似于枕形畸变。</p>
+
+<h3>实际应用：安全监控</h3>
+
+<p>广角镜头在安全监控中很常见，因为它能用一个摄像头覆盖更大的区域。通过调整畸变强度，可以在"看得广"和"看得清"之间取得平衡。</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>缩小镜效果是一种"向内扭曲"，能在小区域内显示更大范围的内容</li>
+  <li>门镜、广角镜都利用了这种原理</li>
+  <li>桶形畸变和枕形畸变是两种常见的镜头畸变</li>
+  <li>通过调整UV扭曲的方向和强度，可以模拟各种镜头效果</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>噪声</strong>——让计算机生成的图像看起来更自然的秘密武器！</p>

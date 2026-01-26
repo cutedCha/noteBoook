@@ -1,0 +1,208 @@
+<h2>噪声的应用</h2>
+
+<p>上一章我们学习了噪声的基本概念，这一章让我们看看噪声在实际中的神奇应用。</p>
+
+<h3>🎮 动手试试：水波扰动</h3>
+
+<p>用噪声扭曲UV坐标，让静态的海底图像产生水波荡漾的效果：</p>
+
+<div class="interactive-demo" id="sea-demo" data-demo="sea">
+  <canvas id="seaCanvas" width="280" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <span class="button-label">噪声：</span>
+      <button id="sea-noise-value" class="noise-type-btn">值噪声</button>
+      <button id="sea-noise-perlin" class="noise-type-btn active">Perlin</button>
+    </div>
+    <div class="control-group">
+      <label>扭曲强度：<span id="seaDistortValue">0.03</span></label>
+      <input type="range" id="seaDistort" min="0" max="0.1" step="0.005" value="0.03">
+    </div>
+    <div class="control-group">
+      <label>流动速度：<span id="seaSpeedValue">1.0</span></label>
+      <input type="range" id="seaSpeed" min="0.2" max="3.0" step="0.1" value="1.0">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>原理解析</strong>：</p>
+  <ul>
+    <li>原始图像是静态的，但我们用<strong>噪声扭曲UV坐标</strong></li>
+    <li>噪声随时间变化，所以采样位置也在变化</li>
+    <li>看起来就像水波在荡漾！</li>
+    <li>这个技巧广泛用于水面、热浪、扭曲特效</li>
+  </ul>
+</blockquote>
+
+<h3>地形生成</h3>
+
+<p>游戏中的山脉、丘陵、平原是怎么生成的？答案是<strong>噪声</strong>！</p>
+
+<blockquote>
+<p>把噪声值当作高度，低的地方是水，中等的是平原，高的是山脉。一个随机但自然的世界就诞生了。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 用噪声生成地形高度
+function generateTerrain(width, height, scale) {
+  const terrain = [];
+  
+  for (let y = 0; y < height; y++) {
+    terrain[y] = [];
+    for (let x = 0; x < width; x++) {
+      // 多层噪声叠加，产生更丰富的细节
+      let elevation = 0;
+      elevation += perlinNoise(x * scale, y * scale) * 1.0;
+
+      elevation += perlinNoise(x * scale * 2, y * scale * 2) * 0.5;
+      elevation += perlinNoise(x * scale * 4, y * scale * 4) * 0.25;
+      
+      terrain[y][x] = elevation;
+    }
+  }
+  
+  return terrain;
+}
+
+// 根据高度确定地形类型
+function getTerrainType(elevation) {
+  if (elevation < 0.3) return 'water';
+  if (elevation < 0.4) return 'sand';
+  if (elevation < 0.7) return 'grass';
+  if (elevation < 0.85) return 'rock';
+  return 'snow';
+}</code></pre>
+
+<h3>云朵生成</h3>
+
+<p>天空中的云朵也可以用噪声生成：</p>
+
+<pre><code class="language-glsl">// 云朵着色器
+precision mediump float;
+
+uniform float u_Time;
+varying vec2 v_TexCoord;
+
+float noise(vec2 p) { /* 噪声函数 */ }
+
+float fbm(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  for (int i = 0; i < 5; i++) {
+    value += amplitude * noise(p);
+    p *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+void main() {
+  vec2 uv = v_TexCoord;
+  
+  // 让云朵缓慢移动
+  uv.x += u_Time * 0.02;
+  
+  // 生成云朵
+  float cloud = fbm(uv * 3.0);
+  
+  // 调整对比度，让云朵更明显
+  cloud = smoothstep(0.4, 0.6, cloud);
+  
+  // 天空蓝 + 白云
+  vec3 skyColor = vec3(0.4, 0.6, 0.9);
+  vec3 cloudColor = vec3(1.0, 1.0, 1.0);
+  
+  vec3 color = mix(skyColor, cloudColor, cloud);
+  gl_FragColor = vec4(color, 1.0);
+}</code></pre>
+
+<h3>火焰效果</h3>
+
+<p>噪声可以让火焰看起来自然跳动：</p>
+
+<pre><code class="language-glsl">// 火焰着色器
+void main() {
+  vec2 uv = v_TexCoord;
+  
+  // 火焰向上飘动
+  uv.y -= u_Time * 0.5;
+  
+  // 用噪声扰动
+  float n = fbm(uv * 4.0);
+  
+  // 火焰形状（下宽上窄）
+  float flame = 1.0 - v_TexCoord.y;
+  flame *= n;
+  
+  // 火焰颜色渐变
+  vec3 color = mix(
+    vec3(1.0, 0.0, 0.0),   // 红色（外焰）
+    vec3(1.0, 1.0, 0.0),   // 黄色（内焰）
+    flame
+  );
+  
+  gl_FragColor = vec4(color, flame);
+}</code></pre>
+
+<h3>水面波纹</h3>
+
+<p>平静的水面也需要一点噪声来显得真实：</p>
+
+<pre><code class="language-javascript">// 水面波纹
+function waterRipple(x, y, time) {
+  // 基础波浪
+  let wave = Math.sin(x * 0.5 + time) * 0.5;
+  wave += Math.sin(y * 0.3 + time * 0.7) * 0.3;
+  
+  // 加入噪声让波浪更自然
+  wave += perlinNoise(x * 0.1 + time * 0.1, y * 0.1) * 0.2;
+  
+  return wave;
+}</code></pre>
+
+<h3>纹理变化</h3>
+
+<p>噪声可以让纹理看起来不那么重复：</p>
+
+<pre><code class="language-glsl">// 用噪声打破纹理的重复感
+vec4 textureWithVariation(sampler2D tex, vec2 uv) {
+  // 基础纹理
+  vec4 color = texture2D(tex, uv);
+  
+  // 用噪声调整亮度
+  float variation = noise(uv * 10.0) * 0.2 - 0.1;
+  color.rgb += variation;
+  
+  return color;
+}</code></pre>
+
+<h3>更多应用</h3>
+
+<p>噪声的应用几乎无处不在：</p>
+
+<ul>
+  <li><strong>树木生成</strong>：树枝的分叉角度、树叶的分布</li>
+  <li><strong>毛发渲染</strong>：头发的卷曲程度</li>
+  <li><strong>风吹草动</strong>：草的摆动幅度</li>
+  <li><strong>旧化效果</strong>：锈迹、污渍的分布</li>
+  <li><strong>星空生成</strong>：星星的位置和亮度</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>噪声可以用来生成地形、云朵、火焰等自然效果</li>
+  <li>通过调整噪声的参数，可以控制效果的细节程度</li>
+  <li>噪声常与时间结合，产生动态效果</li>
+  <li>噪声是程序化内容生成的核心工具</li>
+</ol>
+
+<div class="key-point">
+  <h4>💡 作弊技巧：预生成噪声纹理</h4>
+  <p>实时计算噪声很耗性能！聪明的做法是：<strong>把噪声预先"烘焙"到纹理里</strong>。</p>
+  <p>游戏启动时生成一张噪声纹理，运行时直接采样这张纹理，比实时计算快得多。这就是为什么很多游戏资源里都有一张灰蒙蒙的"噪声图"——那可是宝贝！</p>
+</div>
+
+<p>在下一章，我们将学习<strong>UV坐标</strong>——理解纹理是如何"贴"到模型上的！</p>

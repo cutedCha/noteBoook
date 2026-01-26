@@ -1,0 +1,166 @@
+<h2>渲染流水线不是固定的</h2>
+
+<p>在第5章，我们学习了渲染流水线的基本流程。但你知道吗？<strong>渲染流水线并不是只有一种固定的形式</strong>。就像做菜有不同的方法，渲染也有不同的"烹饪方式"。</p>
+
+<h3>两种主流的渲染方式</h3>
+
+<p>目前最常用的两种渲染方式是：</p>
+
+<ul>
+  <li><strong>前向渲染（Forward Rendering）</strong>：传统方式，一个物体一个物体地画</li>
+  <li><strong>延迟渲染（Deferred Rendering）</strong>：先收集信息，最后统一计算光照</li>
+</ul>
+
+<blockquote>
+<p>想象你在餐厅点餐：前向渲染就像是每道菜单独做、单独上；延迟渲染则是先把所有食材准备好，最后一起烹饪上桌。</p>
+</blockquote>
+
+<h3>前向渲染：简单直接</h3>
+
+<p>前向渲染是最直观的方式：对于场景中的每个物体，计算所有光源对它的影响，然后画到屏幕上。</p>
+
+<pre><code class="language-javascript">// 前向渲染的伪代码
+function forwardRendering(scene, lights) {
+  for (const object of scene.objects) {
+    // 对每个物体
+    let finalColor = vec3(0, 0, 0);
+    
+    for (const light of lights) {
+      // 计算每个光源的贡献
+      finalColor += calculateLighting(object, light);
+    }
+    
+    // 直接画到屏幕
+    drawToScreen(object, finalColor);
+  }
+}
+
+// 复杂度：O(物体数量 × 光源数量)</code></pre>
+
+<p>前向渲染的<strong>优点</strong>：</p>
+<ul>
+  <li>实现简单，容易理解</li>
+  <li>支持透明物体</li>
+  <li>支持多种材质和着色模型</li>
+  <li>内存占用较少</li>
+</ul>
+
+<p>前向渲染的<strong>缺点</strong>：</p>
+<ul>
+  <li>光源数量多时性能下降严重</li>
+  <li>会计算很多被遮挡的像素（浪费）</li>
+</ul>
+
+<h3>延迟渲染：先存后算</h3>
+
+<p>延迟渲染采用了一个聪明的策略：<strong>把光照计算"延迟"到最后</strong>。</p>
+
+<blockquote>
+<p>这就像是考试时先把所有题目看一遍，把需要的公式都写在草稿纸上，最后再统一作答。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 延迟渲染的伪代码
+function deferredRendering(scene, lights) {
+  // 第一步：几何阶段 - 收集信息到G-Buffer
+  const gBuffer = {
+    position: createTexture(),  // 位置信息
+    normal: createTexture(),    // 法线信息
+    albedo: createTexture(),    // 颜色信息
+    depth: createTexture()      // 深度信息
+  };
+  
+  for (const object of scene.objects) {
+    // 只记录几何信息，不计算光照
+    renderToGBuffer(object, gBuffer);
+  }
+  
+  // 第二步：光照阶段 - 统一计算
+  for (const pixel of screen.pixels) {
+    const pos = gBuffer.position.sample(pixel);
+    const normal = gBuffer.normal.sample(pixel);
+    const albedo = gBuffer.albedo.sample(pixel);
+    
+    let finalColor = vec3(0, 0, 0);
+    for (const light of lights) {
+      finalColor += calculateLighting(pos, normal, albedo, light);
+    }
+    
+    drawPixel(pixel, finalColor);
+  }
+}
+
+// 复杂度：O(物体数量) + O(像素数量 × 光源数量)</code></pre>
+
+<h3>G-Buffer：延迟渲染的秘密武器</h3>
+
+<p>G-Buffer（Geometry Buffer）是延迟渲染的核心。它是一组纹理，存储了场景的几何信息：</p>
+
+<pre><code class="language-glsl">// G-Buffer的结构示例
+// RT0: 位置 (RGB) + 未使用 (A)
+// RT1: 法线 (RGB) + 未使用 (A)  
+// RT2: 漫反射颜色 (RGB) + 高光强度 (A)
+// RT3: 深度 (R)
+
+// 几何阶段的片段着色器
+void geometryPass() {
+  // 输出到多个渲染目标
+  gl_FragData[0] = vec4(worldPosition, 1.0);
+  gl_FragData[1] = vec4(worldNormal, 1.0);
+  gl_FragData[2] = vec4(albedo, specularIntensity);
+  gl_FragData[3] = vec4(depth, 0.0, 0.0, 1.0);
+}</code></pre>
+
+<h3>如何选择？</h3>
+
+<p>选择哪种渲染方式，取决于你的场景特点：</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 1em 0;">
+  <tr style="background: #f5f5f5;">
+    <th style="padding: 8px; border: 1px solid #ddd;">场景特点</th>
+    <th style="padding: 8px; border: 1px solid #ddd;">推荐方式</th>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #ddd;">光源少（&lt;10个）</td>
+    <td style="padding: 8px; border: 1px solid #ddd;">前向渲染</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #ddd;">光源多（几十上百个）</td>
+    <td style="padding: 8px; border: 1px solid #ddd;">延迟渲染</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #ddd;">需要透明物体</td>
+    <td style="padding: 8px; border: 1px solid #ddd;">前向渲染（或混合）</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #ddd;">内存受限</td>
+    <td style="padding: 8px; border: 1px solid #ddd;">前向渲染</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #ddd;">需要多种材质</td>
+    <td style="padding: 8px; border: 1px solid #ddd;">前向渲染</td>
+  </tr>
+</table>
+
+<h3>现代游戏的选择</h3>
+
+<p>很多现代游戏引擎采用<strong>混合方式</strong>：</p>
+
+<ul>
+  <li>不透明物体用延迟渲染</li>
+  <li>透明物体用前向渲染</li>
+  <li>特殊效果单独处理</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>渲染流水线有多种实现方式</li>
+  <li>前向渲染简单直接，适合光源少的场景</li>
+  <li>延迟渲染先收集信息后计算，适合多光源场景</li>
+  <li>G-Buffer是延迟渲染存储几何信息的关键</li>
+  <li>实际项目中常采用混合方式</li>
+</ol>
+
+<p>了解不同的渲染方式，能帮助你根据项目需求做出更好的技术选择。下一章，我们将学习<strong>合并DrawCall</strong>——一个重要的性能优化技巧！</p>

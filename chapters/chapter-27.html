@@ -1,0 +1,175 @@
+<h2>矩阵的用途</h2>
+
+<p>说到矩阵，很多人可能会想起高中数学课上那些密密麻麻的数字方阵。但在图形学中，矩阵是一个<strong>超级强大的工具</strong>——它能让物体移动、旋转、缩放，甚至变形！</p>
+
+<h3>矩阵是什么？</h3>
+
+<p>简单来说，矩阵就是一个数字排列成的方阵。在图形学中，我们最常用的是4×4矩阵：</p>
+
+<pre><code class="language-javascript">// 一个4x4矩阵的样子
+const matrix = [
+  [a, b, c, d],
+  [e, f, g, h],
+  [i, j, k, l],
+  [m, n, o, p]
+];</code></pre>
+
+<p>看起来很简单对吧？但这16个数字组合在一起，能做出神奇的事情！</p>
+
+<h3>把矩阵当函数用</h3>
+
+<p>这是理解矩阵最重要的思维方式：<strong>矩阵就是一个函数</strong>。</p>
+
+<blockquote>
+<p>想象你有一个神奇的机器，你把一个点的坐标放进去，它就会吐出一个新的坐标。这个机器就是矩阵！输入一个位置，输出另一个位置。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 矩阵就像一个函数
+function matrixTransform(inputPoint, matrix) {
+  // 输入：原始坐标 (x, y, z)
+  // 输出：变换后的坐标 (x', y', z')
+  
+  const x = inputPoint.x;
+  const y = inputPoint.y;
+  const z = inputPoint.z;
+  const w = 1; // 齐次坐标
+  
+  // 矩阵乘法
+  const newX = matrix[0][0]*x + matrix[0][1]*y + matrix[0][2]*z + matrix[0][3]*w;
+  const newY = matrix[1][0]*x + matrix[1][1]*y + matrix[1][2]*z + matrix[1][3]*w;
+  const newZ = matrix[2][0]*x + matrix[2][1]*y + matrix[2][2]*z + matrix[2][3]*w;
+  
+  return { x: newX, y: newY, z: newZ };
+}
+
+// 使用示例
+const originalPoint = { x: 1, y: 2, z: 3 };
+const transformedPoint = matrixTransform(originalPoint, someMatrix);
+// 点被"变换"到了新位置！</code></pre>
+
+<h3>空间变换：矩阵的超能力</h3>
+
+<p>矩阵能做的"变换"有很多种，最基本的三种是：</p>
+
+<ul>
+  <li><strong>平移（Translation）</strong>：让物体移动位置</li>
+  <li><strong>旋转（Rotation）</strong>：让物体转动</li>
+  <li><strong>缩放（Scale）</strong>：让物体变大或变小</li>
+</ul>
+
+<h3>平移矩阵</h3>
+
+<p>想让一个点向右移动5个单位？用平移矩阵！</p>
+
+<pre><code class="language-javascript">// 平移矩阵：移动 (tx, ty, tz)
+function createTranslationMatrix(tx, ty, tz) {
+  return [
+    [1, 0, 0, tx],
+    [0, 1, 0, ty],
+    [0, 0, 1, tz],
+    [0, 0, 0, 1]
+  ];
+}
+
+// 向右移动5个单位
+const moveRight = createTranslationMatrix(5, 0, 0);
+
+// 原点 (0, 0, 0) 经过变换后变成 (5, 0, 0)
+const result = matrixTransform({x:0, y:0, z:0}, moveRight);
+// result = { x: 5, y: 0, z: 0 }</code></pre>
+
+<blockquote>
+<p>生活类比：平移矩阵就像搬家。你的所有家具（点）都按照同样的方向和距离移动，但家具本身的形状不变。</p>
+</blockquote>
+
+<h3>缩放矩阵</h3>
+
+<p>想让物体变大两倍？用缩放矩阵！</p>
+
+<pre><code class="language-javascript">// 缩放矩阵：缩放 (sx, sy, sz)
+function createScaleMatrix(sx, sy, sz) {
+  return [
+    [sx, 0,  0,  0],
+    [0,  sy, 0,  0],
+    [0,  0,  sz, 0],
+    [0,  0,  0,  1]
+  ];
+}
+
+// 放大2倍
+const scaleUp = createScaleMatrix(2, 2, 2);
+
+// 点 (1, 1, 1) 变成 (2, 2, 2)
+const result = matrixTransform({x:1, y:1, z:1}, scaleUp);
+// result = { x: 2, y: 2, z: 2 }</code></pre>
+
+<blockquote>
+<p>生活类比：缩放矩阵就像用复印机放大或缩小。所有的点都离原点更远（放大）或更近（缩小）。</p>
+</blockquote>
+
+<h3>矩阵的组合：连续变换</h3>
+
+<p>矩阵最强大的地方在于：<strong>多个变换可以合并成一个矩阵</strong>！</p>
+
+<pre><code class="language-javascript">// 先缩放，再平移
+const scale = createScaleMatrix(2, 2, 2);
+const translate = createTranslationMatrix(10, 0, 0);
+
+// 矩阵乘法：组合两个变换
+const combined = multiplyMatrices(translate, scale);
+
+// 现在 combined 矩阵同时包含了缩放和平移！
+// 一次变换就能完成两个操作</code></pre>
+
+<blockquote>
+<p>这就像是把多个函数合并成一个。f(g(x)) 可以变成 h(x)，其中 h = f ∘ g。矩阵乘法就是在做这种"函数组合"！</p>
+</blockquote>
+
+<h3>为什么用矩阵而不是直接计算？</h3>
+
+<p>你可能会问：直接写代码计算不是更简单吗？为什么要用矩阵？</p>
+
+<ol>
+  <li><strong>统一的接口</strong>：所有变换都用同样的方式表示和计算</li>
+  <li><strong>可以组合</strong>：多个变换合并成一个，减少计算量</li>
+  <li><strong>GPU友好</strong>：显卡特别擅长做矩阵运算，速度极快</li>
+  <li><strong>可逆</strong>：大多数变换矩阵都有逆矩阵，可以"撤销"变换</li>
+</ol>
+
+<pre><code class="language-javascript">// GPU中的顶点着色器
+// 每个顶点都会经过矩阵变换
+attribute vec3 position;
+uniform mat4 transformMatrix;
+
+void main() {
+  // 一行代码完成所有变换！
+  gl_Position = transformMatrix * vec4(position, 1.0);
+}</code></pre>
+
+<h3>齐次坐标：为什么是4×4？</h3>
+
+<p>你可能注意到了，3D空间只有x、y、z三个维度，为什么要用4×4矩阵呢？</p>
+
+<p>这是因为我们使用了<strong>齐次坐标</strong>。简单说，就是给每个点加一个额外的坐标w：</p>
+
+<pre><code class="language-javascript">// 普通3D坐标
+const point3D = { x: 1, y: 2, z: 3 };
+
+// 齐次坐标（加上w=1）
+const pointHomogeneous = { x: 1, y: 2, z: 3, w: 1 };</code></pre>
+
+<p>为什么要这样做？因为<strong>平移操作在3×3矩阵中无法表示</strong>！加上第四个维度后，平移、旋转、缩放都可以用矩阵乘法统一表示了。</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>矩阵可以当作"函数"来理解——输入坐标，输出新坐标</li>
+  <li>矩阵能实现平移、旋转、缩放等空间变换</li>
+  <li>多个矩阵可以相乘，组合成一个变换</li>
+  <li>使用4×4矩阵和齐次坐标是为了统一表示所有变换</li>
+  <li>GPU特别擅长矩阵运算，这是图形学使用矩阵的重要原因</li>
+</ol>
+
+<p>理解了矩阵的基本概念后，下一章我们将深入学习<strong>旋转矩阵</strong>——它是三种基本变换中最复杂也最有趣的一个！</p>

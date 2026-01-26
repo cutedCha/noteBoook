@@ -1,0 +1,218 @@
+<h2>深度纹理</h2>
+
+<p>在之前的章节中，我们学习了各种纹理的用途。今天要介绍的<strong>深度纹理</strong>，是一种特殊而强大的工具，它记录了场景中每个像素"有多远"。</p>
+
+<h3>什么是深度纹理？</h3>
+
+<p>深度纹理存储的是场景中每个像素到摄像机的距离信息。</p>
+
+<blockquote>
+<p>想象你站在一个房间里，用激光测距仪对着每个方向测量距离，然后把这些距离数据画成一张灰度图——近的地方亮，远的地方暗。这就是深度纹理！</p>
+</blockquote>
+
+<h3>🎮 动手试试：深度纹理长啥样</h3>
+
+<p>左边是彩色渲染的立方体，右边是对应的深度纹理。把鼠标移到深度纹理上，看看每个像素的深度值：</p>
+
+<div class="interactive-demo" id="depth-demo" data-demo="depth">
+  <canvas id="depthCanvas" width="300" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="depthAutoRotate" checked>
+        <span>自动旋转</span>
+      </label>
+    </div>
+    <div class="control-group">
+      <label>手动旋转：<span id="depthRotationValue">0°</span></label>
+      <input type="range" id="depthRotation" min="0" max="360" value="0">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>观察要点</strong>：</p>
+  <ul>
+    <li>深度纹理是<strong>灰度图</strong>：白色=近，黑色=远</li>
+    <li>立方体<strong>靠近相机的面</strong>更亮</li>
+    <li>鼠标悬停可以看到<strong>精确的深度值</strong>和<strong>距离</strong></li>
+    <li>深度值范围是0-1，对应近裁剪面到远裁剪面</li>
+  </ul>
+</blockquote>
+
+<pre><code class="language-javascript">// 深度纹理的概念
+const depthTexture = {
+  width: screenWidth,
+  height: screenHeight,
+  // 每个像素存储一个深度值（0-1）
+  // 0 = 最近（在近裁剪面）
+  // 1 = 最远（在远裁剪面）
+  data: new Float32Array(screenWidth * screenHeight)
+};
+
+// 深度值的计算
+function calculateDepth(worldPosition, camera) {
+  const viewPos = camera.viewMatrix.transform(worldPosition);
+  const depth = (viewPos.z - camera.near) / (camera.far - camera.near);
+  return clamp(depth, 0, 1);
+}</code></pre>
+
+<h3>深度纹理的用途一：Raycast探测</h3>
+
+<p>深度纹理最重要的用途之一是<strong>屏幕空间的射线检测</strong>。</p>
+
+
+<blockquote>
+<p>传统的Raycast需要和场景中的每个三角形做碰撞检测，非常耗时。但有了深度纹理，我们可以直接"读取"某个方向上最近物体的距离，就像作弊一样快！</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 使用深度纹理进行快速Raycast
+function screenSpaceRaycast(screenX, screenY, depthTexture, camera) {
+  // 从深度纹理读取深度值
+  const depth = depthTexture.sample(screenX, screenY);
+  
+  // 将屏幕坐标和深度转换回世界坐标
+  const clipPos = {
+    x: (screenX / screenWidth) * 2 - 1,
+    y: (screenY / screenHeight) * 2 - 1,
+    z: depth * 2 - 1,
+    w: 1
+  };
+  
+  // 逆投影变换
+  const worldPos = camera.inverseViewProjection.transform(clipPos);
+  worldPos.divideByW();
+  
+  return {
+    hit: depth < 1.0,  // 深度为1表示没有击中任何物体
+    position: worldPos,
+    distance: calculateDistance(camera.position, worldPos)
+  };
+}
+
+// 应用：点击屏幕获取3D位置
+canvas.onclick = (e) => {
+  const result = screenSpaceRaycast(e.clientX, e.clientY, depthTex, camera);
+  if (result.hit) {
+    console.log('点击位置:', result.position);
+  }
+};</code></pre>
+
+<h3>深度纹理的用途二：软阴影</h3>
+
+<p>深度纹理是实现阴影的基础。通过从光源视角渲染深度纹理（称为Shadow Map），我们可以判断哪些区域在阴影中。</p>
+
+<pre><code class="language-glsl">// 阴影计算的片段着色器
+uniform sampler2D shadowMap;
+uniform mat4 lightViewProjection;
+
+float calculateShadow(vec3 worldPos) {
+  // 将世界坐标转换到光源空间
+  vec4 lightSpacePos = lightViewProjection * vec4(worldPos, 1.0);
+  lightSpacePos.xyz /= lightSpacePos.w;
+  
+  // 转换到0-1范围
+  vec2 shadowUV = lightSpacePos.xy * 0.5 + 0.5;
+  
+  // 从阴影贴图采样深度
+  float shadowDepth = texture2D(shadowMap, shadowUV).r;
+  float currentDepth = lightSpacePos.z * 0.5 + 0.5;
+  
+  // 比较深度：如果当前深度大于阴影贴图深度，说明在阴影中
+  float shadow = currentDepth > shadowDepth + 0.001 ? 0.5 : 1.0;
+  
+  return shadow;
+}</code></pre>
+
+
+<h3>深度纹理的用途三：景深效果</h3>
+
+<p>电影中常见的景深效果（焦点清晰，前后模糊）也依赖深度纹理：</p>
+
+<pre><code class="language-glsl">// 景深效果
+uniform sampler2D colorTexture;
+uniform sampler2D depthTexture;
+uniform float focusDistance;  // 焦点距离
+uniform float focusRange;     // 焦点范围
+
+vec4 depthOfField(vec2 uv) {
+  float depth = texture2D(depthTexture, uv).r;
+  
+  // 计算模糊程度：离焦点越远越模糊
+  float blur = abs(depth - focusDistance) / focusRange;
+  blur = clamp(blur, 0.0, 1.0);
+  
+  // 根据模糊程度采样
+  vec4 sharpColor = texture2D(colorTexture, uv);
+  vec4 blurredColor = gaussianBlur(colorTexture, uv, blur * 10.0);
+  
+  return mix(sharpColor, blurredColor, blur);
+}</code></pre>
+
+<h3>深度纹理的用途四：屏幕空间效果</h3>
+
+<p>很多高级效果都需要深度信息：</p>
+
+<ul>
+  <li><strong>SSAO（屏幕空间环境光遮蔽）</strong>：让角落和缝隙更暗</li>
+  <li><strong>SSR（屏幕空间反射）</strong>：实时反射效果</li>
+  <li><strong>体积光</strong>：光线穿过烟雾的效果</li>
+  <li><strong>边缘检测</strong>：描边效果</li>
+</ul>
+
+<pre><code class="language-javascript">// 使用深度进行边缘检测
+function edgeDetection(depthTexture, uv) {
+  const center = depthTexture.sample(uv);
+  const left = depthTexture.sample(uv.x - 1, uv.y);
+  const right = depthTexture.sample(uv.x + 1, uv.y);
+  const up = depthTexture.sample(uv.x, uv.y - 1);
+  const down = depthTexture.sample(uv.x, uv.y + 1);
+  
+  // 深度差异大的地方就是边缘
+  const edge = Math.abs(center - left) + Math.abs(center - right) +
+               Math.abs(center - up) + Math.abs(center - down);
+  
+  return edge > threshold ? 1 : 0;
+}</code></pre>
+
+<h3>如何获取深度纹理</h3>
+
+<p>在不同的图形API中获取深度纹理的方式略有不同：</p>
+
+<pre><code class="language-javascript">// WebGL中创建深度纹理
+function createDepthTexture(gl, width, height) {
+  const depthTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+  
+  gl.texImage2D(
+    gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24,
+    width, height, 0,
+    gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null
+  );
+  
+  // 设置采样参数
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  
+  return depthTexture;
+}
+
+// 绑定到帧缓冲
+gl.framebufferTexture2D(
+  gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT,
+  gl.TEXTURE_2D, depthTexture, 0
+);</code></pre>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>深度纹理存储每个像素到摄像机的距离</li>
+  <li>可以用于快速的屏幕空间Raycast</li>
+  <li>是实现阴影的基础（Shadow Map）</li>
+  <li>用于景深、SSAO、SSR等高级效果</li>
+  <li>是现代渲染中不可或缺的工具</li>
+</ol>
+
+<p>深度纹理是连接2D屏幕和3D世界的桥梁，掌握它能让你实现很多炫酷的效果。至此，进阶概念篇就结束了！接下来的数学篇，我们将深入探讨图形学背后的数学原理，从<strong>矩阵的用途</strong>开始！</p>

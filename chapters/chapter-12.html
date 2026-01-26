@@ -1,0 +1,105 @@
+<h2>模糊原理</h2>
+
+<p>你有没有摘下眼镜看过世界？或者透过毛玻璃看浴室外面？那种朦胧、模糊的感觉，其实在图形学中有着精确的数学解释。</p>
+
+<h3>🎮 动手试试：模糊效果对比</h3>
+
+<p>选择不同的模糊算法，调节模糊半径，观察效果差异：</p>
+
+<div class="interactive-demo" id="blur-demo" data-demo="blur">
+  <div class="blur-compare">
+    <canvas id="blurOriginal" width="160" height="160"></canvas>
+    <canvas id="blurResult" width="160" height="160"></canvas>
+  </div>
+  <div class="demo-controls">
+    <div class="button-row">
+      <span class="button-label">算法：</span>
+      <button id="blurGaussian" class="blur-type-btn active">高斯模糊</button>
+      <button id="blurBox" class="blur-type-btn">均值模糊</button>
+    </div>
+    <div class="control-group">
+      <label>模糊半径：<span id="blurRadiusValue">3</span></label>
+      <input type="range" id="blurRadius" min="1" max="10" value="3">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+<p>💡 <strong>观察要点</strong>：</p>
+<ul>
+  <li><strong>高斯模糊</strong>：边缘过渡更自然柔和，中心权重大</li>
+  <li><strong>均值模糊</strong>：所有像素权重相同，效果较生硬</li>
+  <li>半径越大，模糊越强，但计算量也越大</li>
+</ul>
+</blockquote>
+
+<h3>像素的"串门"现象</h3>
+
+<p>想象一下，你住在一个小区里，每家每户都有自己的颜色：</p>
+
+<ul>
+  <li>你家是红色</li>
+  <li>左边邻居是蓝色</li>
+  <li>右边邻居是绿色</li>
+  <li>楼上是黄色</li>
+</ul>
+
+<p>有一天，大家决定"串门"，把自己的颜色分享给邻居。最后，每家的颜色都变成了<strong>自己和邻居颜色的混合</strong>。</p>
+
+<blockquote>
+<p>模糊效果的本质，就是让每个像素的颜色"串门"——把周围像素的颜色混合在一起。</p>
+</blockquote>
+
+<h3>现实中的模糊</h3>
+
+<p>生活中有很多模糊的例子：</p>
+
+<ul>
+  <li><strong>毛玻璃</strong>：光线在粗糙表面发生散射，每个点接收到周围多个方向的光</li>
+  <li><strong>近视眼</strong>：晶状体无法正确聚焦，光线在视网膜上形成一个"圆斑"而不是一个点</li>
+  <li><strong>雾天</strong>：空气中的水滴散射光线，远处的物体变得模糊</li>
+  <li><strong>相机失焦</strong>：焦点不在物体上，光线无法汇聚成一点</li>
+</ul>
+
+<h3>均值模糊 vs 高斯模糊</h3>
+
+<p><strong>均值模糊</strong>是最简单的方法——把周围像素的颜色取平均值。就像每个邻居的"贡献"都一样。</p>
+
+<p>但在现实中，越近的邻居影响应该越大。<strong>高斯模糊</strong>使用"钟形曲线"来分配权重：</p>
+
+<ul>
+  <li>中心像素权重最大</li>
+  <li>越远的像素权重越小</li>
+  <li>权重按照高斯分布递减</li>
+</ul>
+
+<p>这就是为什么高斯模糊看起来更自然——它模拟了真实世界中光线散射的物理规律。</p>
+
+<h3>模糊半径与性能</h3>
+
+<p>模糊的"强度"取决于采样范围：</p>
+
+<ul>
+  <li><strong>半径1</strong>：3×3范围，采样9个像素</li>
+  <li><strong>半径2</strong>：5×5范围，采样25个像素</li>
+  <li><strong>半径5</strong>：11×11范围，采样121个像素</li>
+</ul>
+
+<blockquote>
+<p>问题来了：如果要实现很强的模糊（比如半径10），需要采样441个像素，性能会很差！</p>
+</blockquote>
+
+<p>解决方案是<strong>两次分离模糊</strong>：先水平模糊，再垂直模糊。21×21的模糊只需要采样21+21=42个像素！</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>模糊的本质是像素颜色的"串门"——混合周围像素的颜色</li>
+  <li>均值模糊简单但效果生硬，高斯模糊更自然</li>
+  <li>高斯模糊使用钟形曲线分配权重，越近的像素影响越大</li>
+  <li>大范围模糊可以用分离模糊优化性能</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>卷积核</strong>——它是模糊、锐化、边缘检测等效果的通用工具！</p>

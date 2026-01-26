@@ -1,0 +1,189 @@
+<h2>卷积核是什么</h2>
+
+<p>上一章我们学习了模糊，用到了"采样周围像素并加权求和"的方法。其实，这种方法有一个专业的名字——<strong>卷积</strong>，而那些权重组成的矩阵叫做<strong>卷积核</strong>。</p>
+
+<h3>卷积核：像素处理的"配方"</h3>
+
+<p>想象你在做菜，有一个通用的"配方模板"：</p>
+
+<ul>
+  <li>取当前食材和周围的食材</li>
+  <li>按照配方比例混合</li>
+  <li>得到新的味道</li>
+</ul>
+
+<p>卷积核就是这个"配方"，它告诉我们：</p>
+
+<blockquote>
+<p>对于每个像素，取它周围的像素，按照卷积核中的权重相乘后求和，得到新的像素值。</p>
+</blockquote>
+
+<h3>卷积核的结构</h3>
+
+<p>卷积核通常是一个小的方形矩阵，比如3×3：</p>
+
+<pre><code class="language-javascript">// 不同效果的卷积核
+
+// 1. 恒等核（不改变图像）
+const identity = [
+  [0, 0, 0],
+  [0, 1, 0],
+  [0, 0, 0]
+];
+
+// 2. 均值模糊核
+const boxBlur = [
+  [1/9, 1/9, 1/9],
+  [1/9, 1/9, 1/9],
+  [1/9, 1/9, 1/9]
+];
+
+// 3. 高斯模糊核
+const gaussianBlur = [
+  [1/16, 2/16, 1/16],
+  [2/16, 4/16, 2/16],
+  [1/16, 2/16, 1/16]
+];
+
+// 4. 锐化核
+const sharpen = [
+  [ 0, -1,  0],
+  [-1,  5, -1],
+  [ 0, -1,  0]
+];
+
+// 5. 边缘检测核
+const edgeDetect = [
+  [-1, -1, -1],
+  [-1,  8, -1],
+  [-1, -1, -1]
+];</code></pre>
+
+<h3>卷积的计算过程</h3>
+
+<p>让我们看看卷积是如何工作的：</p>
+
+<pre><code class="language-javascript">// 卷积计算
+function convolve(imageData, kernel, x, y) {
+  const kernelSize = kernel.length;
+  const halfSize = Math.floor(kernelSize / 2);
+  
+  let result = 0;
+  
+  // 遍历卷积核
+  for (let ky = 0; ky < kernelSize; ky++) {
+    for (let kx = 0; kx < kernelSize; kx++) {
+      // 对应的图像位置
+      const imgX = x + kx - halfSize;
+      const imgY = y + ky - halfSize;
+      
+      // 获取像素值
+      const pixel = getPixel(imageData, imgX, imgY);
+      
+      // 乘以卷积核权重并累加
+      result += pixel * kernel[ky][kx];
+    }
+  }
+  
+  return result;
+}</code></pre>
+
+<h3>不同卷积核的效果</h3>
+
+<p>通过改变卷积核的数值，可以实现完全不同的效果：</p>
+
+<ul>
+  <li><strong>模糊</strong>：所有权重为正，求平均</li>
+  <li><strong>锐化</strong>：中心权重大于1，周围为负，增强对比</li>
+  <li><strong>边缘检测</strong>：中心与周围符号相反，突出变化</li>
+  <li><strong>浮雕</strong>：一侧为正一侧为负，产生立体感</li>
+</ul>
+
+<pre><code class="language-glsl">// Shader中的卷积实现
+precision mediump float;
+
+uniform sampler2D u_Texture;
+uniform vec2 u_TexelSize;
+uniform float u_Kernel[9];  // 3x3卷积核
+
+varying vec2 v_TexCoord;
+
+void main() {
+  vec3 color = vec3(0.0);
+  
+  // 偏移量数组
+  vec2 offsets[9];
+  offsets[0] = vec2(-1, -1); offsets[1] = vec2(0, -1); offsets[2] = vec2(1, -1);
+  offsets[3] = vec2(-1,  0); offsets[4] = vec2(0,  0); offsets[5] = vec2(1,  0);
+  offsets[6] = vec2(-1,  1); offsets[7] = vec2(0,  1); offsets[8] = vec2(1,  1);
+  
+  // 应用卷积
+  for (int i = 0; i < 9; i++) {
+    vec2 samplePos = v_TexCoord + offsets[i] * u_TexelSize;
+    color += texture2D(u_Texture, samplePos).rgb * u_Kernel[i];
+  }
+  
+  gl_FragColor = vec4(color, 1.0);
+}</code></pre>
+
+<h3>卷积与深度学习</h3>
+
+<p>有趣的是，卷积核不仅用于图像处理，还是<strong>深度学习</strong>的核心概念！</p>
+
+<p>在卷积神经网络（CNN）中：</p>
+
+<ul>
+  <li>卷积核的权重不是人工设定的，而是<strong>自动学习</strong>的</li>
+  <li>网络会学习出能识别边缘、纹理、形状的卷积核</li>
+  <li>多层卷积可以识别越来越复杂的特征</li>
+</ul>
+
+<blockquote>
+<p>图形学中的卷积核是人工设计的"配方"，而深度学习让计算机自己发明"配方"！</p>
+</blockquote>
+
+<h3>常用卷积核速查</h3>
+
+<pre><code class="language-javascript">// 实用卷积核集合
+const Kernels = {
+  // 浮雕效果
+  emboss: [
+    [-2, -1, 0],
+    [-1,  1, 1],
+    [ 0,  1, 2]
+  ],
+  
+  // Sobel边缘检测（水平）
+  sobelX: [
+    [-1, 0, 1],
+    [-2, 0, 2],
+    [-1, 0, 1]
+  ],
+  
+  // Sobel边缘检测（垂直）
+  sobelY: [
+    [-1, -2, -1],
+    [ 0,  0,  0],
+    [ 1,  2,  1]
+  ],
+  
+  // 强锐化
+  strongSharpen: [
+    [-1, -1, -1],
+    [-1,  9, -1],
+    [-1, -1, -1]
+  ]
+};</code></pre>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>卷积核是一个权重矩阵，定义了如何处理像素及其邻居</li>
+  <li>不同的卷积核可以实现模糊、锐化、边缘检测等效果</li>
+  <li>卷积的计算过程是"滑动窗口 + 加权求和"</li>
+  <li>深度学习中的CNN也使用卷积，但权重是自动学习的</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>折射原理</strong>——光线在不同介质中传播时为什么会"拐弯"！</p>

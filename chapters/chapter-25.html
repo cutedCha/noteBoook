@@ -1,0 +1,189 @@
+<h2>合并DC原理</h2>
+
+<p>在第6章，我们学习了DrawCall（DC）是什么。现在让我们深入了解一个重要的优化技巧：<strong>合并DrawCall</strong>。这是游戏性能优化中最常用的手段之一。</p>
+
+<h3>为什么要合并DC？</h3>
+
+<p>每次DrawCall都需要CPU和GPU之间进行通信，这个过程是有开销的。</p>
+
+<blockquote>
+<p>想象你在网上购物：如果你买10件东西，分10个订单下单，快递员要跑10趟；但如果合并成1个订单，快递员只需要跑1趟。合并DC就是这个道理——<strong>减少"跑腿"的次数</strong>。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 未优化：每个物体一个DrawCall
+function renderWithoutBatching(objects) {
+  for (const obj of objects) {
+    bindMaterial(obj.material);
+    bindMesh(obj.mesh);
+    drawCall();  // 每个物体都要调用一次
+  }
+}
+// 100个物体 = 100次DrawCall
+
+// 优化后：相同材质的物体合并
+function renderWithBatching(objects) {
+  const batches = groupByMaterial(objects);
+  
+  for (const [material, meshes] of batches) {
+    bindMaterial(material);
+    const combinedMesh = combineMeshes(meshes);
+    bindMesh(combinedMesh);
+    drawCall();  // 相同材质只需要一次
+  }
+}
+// 100个物体，10种材质 = 10次DrawCall</code></pre>
+
+<h3>合并的前提条件</h3>
+
+<p>并不是所有物体都能合并，需要满足一些条件：</p>
+
+<ul>
+  <li><strong>相同的材质</strong>：使用同一个shader和纹理</li>
+  <li><strong>相同的渲染状态</strong>：混合模式、深度测试等设置相同</li>
+  <li><strong>静态物体</strong>：位置不会改变（对于静态合批）</li>
+</ul>
+
+<blockquote>
+<p>这就像是拼车：只有目的地相同（材质相同）、出发时间相近（渲染状态相同）的人才能拼在一起。</p>
+</blockquote>
+
+<h3>静态合批 vs 动态合批</h3>
+
+<p>合批有两种主要方式：</p>
+
+<h4>静态合批（Static Batching）</h4>
+
+<pre><code class="language-javascript">// 静态合批：在游戏启动时预先合并
+class StaticBatcher {
+  constructor() {
+    this.batches = new Map();
+  }
+  
+  // 预处理阶段：合并所有静态物体
+  preprocess(staticObjects) {
+    // 按材质分组
+    for (const obj of staticObjects) {
+      const key = obj.material.id;
+      if (!this.batches.has(key)) {
+        this.batches.set(key, []);
+      }
+      this.batches.get(key).push(obj);
+    }
+    
+    // 合并每组的网格
+    for (const [materialId, objects] of this.batches) {
+      const combinedVertices = [];
+      const combinedIndices = [];
+      
+      for (const obj of objects) {
+        // 将物体的顶点变换到世界空间
+        const worldVertices = transformVertices(
+          obj.mesh.vertices, 
+          obj.worldMatrix
+        );
+        
+        // 合并顶点和索引
+        const indexOffset = combinedVertices.length;
+        combinedVertices.push(...worldVertices);
+        combinedIndices.push(
+          ...obj.mesh.indices.map(i => i + indexOffset)
+        );
+      }
+      
+      // 创建合并后的网格
+      this.batches.set(materialId, {
+        mesh: createMesh(combinedVertices, combinedIndices),
+        material: objects[0].material
+      });
+    }
+  }
+}</code></pre>
+
+<p>静态合批的<strong>优点</strong>：运行时开销极小</p>
+<p>静态合批的<strong>缺点</strong>：占用更多内存，物体不能移动</p>
+
+<h4>动态合批（Dynamic Batching）</h4>
+
+<pre><code class="language-javascript">// 动态合批：每帧实时合并
+class DynamicBatcher {
+  batchAndRender(objects) {
+    // 按材质分组
+    const groups = groupByMaterial(objects);
+    
+    for (const [material, groupObjects] of groups) {
+      // 检查是否值得合批
+      // （太大的网格合批反而更慢）
+      if (this.shouldBatch(groupObjects)) {
+        this.renderBatched(material, groupObjects);
+      } else {
+        this.renderIndividually(material, groupObjects);
+      }
+    }
+  }
+  
+  shouldBatch(objects) {
+    const totalVertices = objects.reduce(
+      (sum, obj) => sum + obj.mesh.vertexCount, 0
+    );
+    // 顶点数太多就不合批
+    return totalVertices < 900;
+  }
+  
+  renderBatched(material, objects) {
+    bindMaterial(material);
+    
+    // 实时合并顶点数据
+    const batchedData = this.combineOnTheFly(objects);
+    uploadToGPU(batchedData);
+    
+    drawCall();
+  }
+}</code></pre>
+
+<p>动态合批的<strong>优点</strong>：支持移动的物体</p>
+<p>动态合批的<strong>缺点</strong>：每帧都要计算，有CPU开销</p>
+
+<h3>GPU Instancing：更高效的方式</h3>
+
+<p>当你有大量相同网格但不同位置的物体时（比如森林里的树），GPU Instancing是更好的选择：</p>
+
+<pre><code class="language-javascript">// GPU Instancing：一次DrawCall绘制多个实例
+function renderWithInstancing(mesh, material, transforms) {
+  bindMaterial(material);
+  bindMesh(mesh);
+  
+  // 上传所有实例的变换矩阵
+  uploadInstanceData(transforms);
+  
+  // 一次调用绘制所有实例
+  drawInstanced(transforms.length);
+}
+
+// 1000棵树 = 1次DrawCall！</code></pre>
+
+<blockquote>
+<p>GPU Instancing就像是复印机：你只需要提供一个模板（网格）和一份清单（变换矩阵），GPU就能快速"复印"出所有副本。</p>
+</blockquote>
+
+<h3>实际优化建议</h3>
+
+<ol>
+  <li><strong>使用图集（Atlas）</strong>：把多张小纹理合并成一张大纹理</li>
+  <li><strong>合理规划材质</strong>：尽量让相似物体使用相同材质</li>
+  <li><strong>标记静态物体</strong>：不会移动的物体标记为静态</li>
+  <li><strong>使用LOD</strong>：远处的物体用简化模型</li>
+</ol>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>DrawCall有开销，合并可以提升性能</li>
+  <li>相同材质的物体可以合并绘制</li>
+  <li>静态合批适合不移动的物体</li>
+  <li>动态合批适合小型移动物体</li>
+  <li>GPU Instancing适合大量相同网格的物体</li>
+</ol>
+
+<p>掌握合并DC的技巧，能让你的游戏运行得更流畅。下一章，我们将学习<strong>深度纹理</strong>——一个在很多高级效果中都会用到的重要概念！</p>

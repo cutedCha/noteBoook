@@ -1,0 +1,120 @@
+<h2>纹理是什么</h2>
+
+<p>如果3D模型只有顶点和颜色，那它看起来会像是塑料玩具一样单调。要让模型看起来真实，有木纹、有锈迹、有皮肤的毛孔，就需要用到<strong>纹理</strong>。</p>
+
+<h3>纹理：3D模型的"皮肤"</h3>
+
+<p>想象你在给一个石膏像穿衣服：</p>
+
+<ul>
+  <li>石膏像本身是白色的（3D模型）</li>
+  <li>你把一张印有图案的布贴在上面（纹理）</li>
+  <li>石膏像就有了颜色和图案</li>
+</ul>
+
+<blockquote>
+<p>纹理就像是3D模型的"贴纸"或"壁纸"，让原本单调的模型变得丰富多彩。</p>
+</blockquote>
+
+<h3>纹理的本质</h3>
+
+<p>从技术角度来说，纹理就是一张<strong>图片</strong>，存储在GPU的显存中：</p>
+
+<pre><code class="language-javascript">// 加载纹理的基本流程
+async function loadTexture(gl, imageUrl) {
+  // 1. 加载图片
+  const image = await loadImage(imageUrl);
+  
+  // 2. 创建纹理对象
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  
+  // 3. 把图片数据上传到GPU
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    image
+  );
+  
+  // 4. 设置纹理参数
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  
+  return texture;
+}</code></pre>
+
+<h3>纹理坐标（UV）</h3>
+
+<p>有了纹理图片，还需要告诉GPU"模型的哪个部分对应图片的哪个位置"。这就是<strong>纹理坐标</strong>，通常叫做<strong>UV坐标</strong>：</p>
+
+<ul>
+  <li><strong>U</strong>：对应图片的水平方向（0到1）</li>
+  <li><strong>V</strong>：对应图片的垂直方向（0到1）</li>
+</ul>
+
+<pre><code class="language-javascript">// 顶点的纹理坐标
+const vertices = [
+  // 位置           纹理坐标(UV)
+  { pos: [-1, -1], uv: [0, 0] },  // 左下角 → 图片左下角
+  { pos: [ 1, -1], uv: [1, 0] },  // 右下角 → 图片右下角
+  { pos: [ 1,  1], uv: [1, 1] },  // 右上角 → 图片右上角
+  { pos: [-1,  1], uv: [0, 1] },  // 左上角 → 图片左上角
+];</code></pre>
+
+<h3>纹理采样</h3>
+
+<p>在片元着色器中，我们通过UV坐标从纹理中"采样"颜色：</p>
+
+<pre><code class="language-glsl">// 片元着色器中的纹理采样
+precision mediump float;
+
+uniform sampler2D u_Texture;  // 纹理
+varying vec2 v_TexCoord;      // 从顶点着色器传来的UV坐标
+
+void main() {
+  // 根据UV坐标，从纹理中获取颜色
+  vec4 texColor = texture2D(u_Texture, v_TexCoord);
+  gl_FragColor = texColor;
+}</code></pre>
+
+<h3>纹理的类型</h3>
+
+<p>纹理不只是用来存储颜色，还可以存储各种信息：</p>
+
+<ul>
+  <li><strong>漫反射贴图</strong>：物体的基本颜色</li>
+  <li><strong>法线贴图</strong>：模拟表面凹凸（我们之前讲过）</li>
+  <li><strong>高光贴图</strong>：哪些地方更亮</li>
+  <li><strong>透明度贴图</strong>：哪些地方是透明的</li>
+  <li><strong>环境遮蔽贴图</strong>：哪些地方应该更暗</li>
+</ul>
+
+<h3>纹理的大小</h3>
+
+<p>纹理的分辨率通常是2的幂次方：</p>
+
+<ul>
+  <li>64×64、128×128、256×256</li>
+  <li>512×512、1024×1024、2048×2048</li>
+  <li>4096×4096（4K纹理）</li>
+</ul>
+
+<blockquote>
+<p>纹理越大，细节越丰富，但占用的显存也越多。游戏开发中需要在质量和性能之间找平衡。</p>
+</blockquote>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>纹理是贴在3D模型表面的图片，让模型有丰富的细节</li>
+  <li>UV坐标告诉GPU模型的每个点对应纹理的哪个位置</li>
+  <li>片元着色器通过"采样"从纹理中获取颜色</li>
+  <li>纹理不只存储颜色，还可以存储法线、高光等各种信息</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>法线</strong>——理解它是如何影响光照计算的！</p>

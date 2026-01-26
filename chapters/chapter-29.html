@@ -1,0 +1,296 @@
+<h2>MVP矩阵</h2>
+
+<p>在前两章中，我们学习了矩阵变换的基础知识。现在，让我们来认识图形学中最重要的三个矩阵：<strong>Model、View、Projection</strong>，合称<strong>MVP矩阵</strong>。它们是把3D世界显示到2D屏幕上的关键！</p>
+
+<h3>🎮 动手试试：矩阵当函数使</h3>
+
+<p>每个旋转矩阵就是一个"变换函数"。勾选启用不同的旋转矩阵，观察它们如何组合起来变换方块：</p>
+
+<div class="interactive-demo" id="mvp-demo" data-demo="mvp">
+  <canvas id="mvpCanvas" width="350" height="280"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="mvpAutoRotate" checked>
+        <span>自动旋转</span>
+      </label>
+      <button id="mvpReset" class="mvp-btn">重置</button>
+    </div>
+    <div class="button-row" style="margin-top: 8px;">
+      <span style="color: #888; font-size: 12px; margin-right: 8px;">启用矩阵：</span>
+      <label class="toggle-label" style="color: #ff6b6b;">
+        <input type="checkbox" id="mvpEnableRotX" checked>
+        <span>Rx (X轴)</span>
+      </label>
+      <label class="toggle-label" style="color: #51cf66;">
+        <input type="checkbox" id="mvpEnableRotY" checked>
+        <span>Ry (Y轴)</span>
+      </label>
+      <label class="toggle-label" style="color: #74c0fc;">
+        <input type="checkbox" id="mvpEnableRotZ">
+        <span>Rz (Z轴)</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>矩阵 = 函数</strong>：</p>
+  <ul>
+    <li><strong style="color: #ff6b6b;">Rx</strong>：绕X轴旋转的函数</li>
+    <li><strong style="color: #51cf66;">Ry</strong>：绕Y轴旋转的函数</li>
+    <li><strong style="color: #74c0fc;">Rz</strong>：绕Z轴旋转的函数</li>
+    <li>取消勾选 = 跳过这个变换（相当于乘以单位矩阵I）</li>
+    <li>底部公式显示当前的矩阵组合：<code>变换 = Rz × Ry × Rx × 顶点</code></li>
+    <li>CPU算好组合矩阵，传给GPU，GPU只需做一次矩阵乘法！</li>
+  </ul>
+</blockquote>
+
+<h3>从3D到2D的旅程</h3>
+
+<p>想象一下，你在3D软件里建了一个漂亮的模型，最终它要显示在你的屏幕上。这个过程中，每个顶点都要经历一段"旅程"：</p>
+
+<blockquote>
+<p>模型空间 → 世界空间 → 观察空间 → 裁剪空间 → 屏幕空间</p>
+</blockquote>
+
+<p>MVP矩阵就是负责前三段旅程的"导游"！</p>
+
+<pre><code class="language-javascript">// 顶点的变换之旅
+// 最终位置 = Projection × View × Model × 原始位置
+
+// 在着色器中
+gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+
+// 或者预先合并成一个MVP矩阵
+uniform mat4 mvpMatrix;
+gl_Position = mvpMatrix * vec4(position, 1.0);</code></pre>
+
+<h3>Model矩阵：模型的"身份证"</h3>
+
+<p><strong>Model矩阵</strong>描述了一个物体在世界中的位置、旋转和大小。</p>
+
+<blockquote>
+<p>生活类比：想象你在布置一个房间。每件家具都有自己的"出厂状态"（模型空间），你需要决定把它放在房间的哪个位置、朝向哪边、要不要缩放。这些决定就构成了Model矩阵。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// Model矩阵 = 平移 × 旋转 × 缩放
+function createModelMatrix(position, rotation, scale) {
+  const T = createTranslationMatrix(position.x, position.y, position.z);
+  const R = createRotationMatrix(rotation.x, rotation.y, rotation.z);
+  const S = createScaleMatrix(scale.x, scale.y, scale.z);
+  
+  // 注意顺序：先缩放，再旋转，最后平移
+  return multiply(T, multiply(R, S));
+}
+
+// 一个放在(10, 0, 5)位置，旋转45度，放大2倍的物体
+const cubeModel = createModelMatrix(
+  { x: 10, y: 0, z: 5 },      // 位置
+  { x: 0, y: Math.PI/4, z: 0 }, // 旋转（绕Y轴45度）
+  { x: 2, y: 2, z: 2 }         // 缩放
+);</code></pre>
+
+<p>每个物体都有自己的Model矩阵，这就是为什么同一个模型可以在场景中出现多次，每次位置和大小都不同。</p>
+
+<h3>View矩阵：摄像机的"眼睛"</h3>
+
+<p><strong>View矩阵</strong>描述了摄像机的位置和朝向。它把世界坐标转换成"摄像机看到的"坐标。</p>
+
+<blockquote>
+<p>生活类比：你站在房间里看风景。View矩阵就是你的眼睛——你站在哪里？看向哪个方向？头有没有歪？这些决定了你"看到"的画面。</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 创建View矩阵的常用方法：lookAt
+function createLookAtMatrix(eye, target, up) {
+  // eye: 摄像机位置
+  // target: 看向的目标点
+  // up: 上方向（通常是Y轴正方向）
+  
+  // 计算摄像机的三个轴
+  const zAxis = normalize(subtract(eye, target));  // 后方
+  const xAxis = normalize(cross(up, zAxis));       // 右方
+  const yAxis = cross(zAxis, xAxis);               // 上方
+  
+  // View矩阵 = 旋转 × 平移（把世界移到摄像机前面）
+  return [
+    [xAxis.x, xAxis.y, xAxis.z, -dot(xAxis, eye)],
+    [yAxis.x, yAxis.y, yAxis.z, -dot(yAxis, eye)],
+    [zAxis.x, zAxis.y, zAxis.z, -dot(zAxis, eye)],
+    [0,       0,       0,       1]
+  ];
+}
+
+// 摄像机在(0, 5, 10)，看向原点
+const viewMatrix = createLookAtMatrix(
+  { x: 0, y: 5, z: 10 },  // 摄像机位置
+  { x: 0, y: 0, z: 0 },   // 看向原点
+  { x: 0, y: 1, z: 0 }    // Y轴朝上
+);</code></pre>
+
+<p>有趣的是，View矩阵本质上是摄像机Model矩阵的<strong>逆矩阵</strong>。因为我们不是移动摄像机，而是把整个世界反向移动！</p>
+
+<h3>Projection矩阵：3D到2D的"魔法"</h3>
+
+<p><strong>Projection矩阵</strong>是最神奇的一个——它把3D空间"压扁"成2D图像，同时处理透视效果。</p>
+
+<p>有两种常见的投影方式：</p>
+
+<h4>透视投影（Perspective）</h4>
+
+<p>模拟人眼看世界的方式：近大远小。</p>
+
+<blockquote>
+<p>生活类比：站在铁轨上看远方，两条平行的铁轨似乎在远处交汇。这就是透视效果！</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 透视投影矩阵
+function createPerspectiveMatrix(fov, aspect, near, far) {
+  // fov: 视野角度（Field of View）
+  // aspect: 宽高比
+  // near: 近裁剪面
+  // far: 远裁剪面
+  
+  const f = 1 / Math.tan(fov / 2);
+  const rangeInv = 1 / (near - far);
+  
+  return [
+    [f/aspect, 0, 0,                         0],
+    [0,        f, 0,                         0],
+    [0,        0, (near+far)*rangeInv,      -1],
+    [0,        0, near*far*rangeInv*2,       0]
+  ];
+}
+
+// 60度视野，16:9宽高比
+const projMatrix = createPerspectiveMatrix(
+  Math.PI / 3,  // 60度
+  16 / 9,       // 宽高比
+  0.1,          // 近裁剪面
+  1000          // 远裁剪面
+);</code></pre>
+
+<h4>正交投影（Orthographic）</h4>
+
+<p>没有透视效果，物体不会近大远小。常用于2D游戏、UI和工程制图。</p>
+
+<pre><code class="language-javascript">// 正交投影矩阵
+function createOrthographicMatrix(left, right, bottom, top, near, far) {
+  return [
+    [2/(right-left), 0,              0,             -(right+left)/(right-left)],
+    [0,              2/(top-bottom), 0,             -(top+bottom)/(top-bottom)],
+    [0,              0,              -2/(far-near), -(far+near)/(far-near)],
+    [0,              0,              0,             1]
+  ];
+}
+
+// 用于2D游戏
+const orthoMatrix = createOrthographicMatrix(
+  0, 800,    // 左右边界
+  0, 600,    // 上下边界
+  -1, 1      // 近远裁剪面
+);</code></pre>
+
+<h3>MVP的组合顺序</h3>
+
+<p>这三个矩阵的组合顺序是固定的：<strong>Projection × View × Model</strong></p>
+
+<pre><code class="language-javascript">// 完整的MVP变换
+function transformVertex(vertex, modelMatrix, viewMatrix, projMatrix) {
+  // 1. Model变换：模型空间 → 世界空间
+  let worldPos = multiply(modelMatrix, vertex);
+  
+  // 2. View变换：世界空间 → 观察空间
+  let viewPos = multiply(viewMatrix, worldPos);
+  
+  // 3. Projection变换：观察空间 → 裁剪空间
+  let clipPos = multiply(projMatrix, viewPos);
+  
+  return clipPos;
+}
+
+// 或者预先计算MVP矩阵
+const mvpMatrix = multiply(projMatrix, multiply(viewMatrix, modelMatrix));
+const clipPos = multiply(mvpMatrix, vertex);</code></pre>
+
+<blockquote>
+<p>为什么是这个顺序？因为矩阵乘法是从右往左读的。vertex先乘Model，结果再乘View，最后乘Projection。</p>
+</blockquote>
+
+<h3>裁剪空间和NDC</h3>
+
+<p>经过MVP变换后，顶点进入<strong>裁剪空间</strong>。这时候坐标是四维的(x, y, z, w)。</p>
+
+<p>接下来GPU会做<strong>透视除法</strong>：把x、y、z都除以w，得到<strong>NDC（标准化设备坐标）</strong>：</p>
+
+<pre><code class="language-javascript">// 透视除法
+function perspectiveDivide(clipPos) {
+  return {
+    x: clipPos.x / clipPos.w,
+    y: clipPos.y / clipPos.w,
+    z: clipPos.z / clipPos.w
+  };
+}
+
+// NDC坐标范围是 [-1, 1]
+// x: -1是屏幕左边，1是右边
+// y: -1是屏幕下边，1是上边
+// z: 用于深度测试</code></pre>
+
+<h3>实际应用示例</h3>
+
+<pre><code class="language-javascript">// 完整的渲染设置
+class Renderer {
+  constructor(canvas) {
+    this.aspect = canvas.width / canvas.height;
+    
+    // 设置投影矩阵（通常只设置一次）
+    this.projectionMatrix = createPerspectiveMatrix(
+      Math.PI / 4,  // 45度视野
+      this.aspect,
+      0.1,
+      1000
+    );
+  }
+  
+  setCamera(position, target) {
+    // 更新View矩阵
+    this.viewMatrix = createLookAtMatrix(
+      position,
+      target,
+      { x: 0, y: 1, z: 0 }
+    );
+  }
+  
+  drawObject(mesh, position, rotation, scale) {
+    // 计算Model矩阵
+    const modelMatrix = createModelMatrix(position, rotation, scale);
+    
+    // 组合MVP
+    const mvpMatrix = multiply(
+      this.projectionMatrix,
+      multiply(this.viewMatrix, modelMatrix)
+    );
+    
+    // 传给着色器
+    gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+    
+    // 绘制
+    gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
+  }
+}</code></pre>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li><strong>Model矩阵</strong>：定义物体在世界中的位置、旋转、缩放</li>
+  <li><strong>View矩阵</strong>：定义摄像机的位置和朝向</li>
+  <li><strong>Projection矩阵</strong>：把3D空间投影到2D，处理透视效果</li>
+  <li>MVP的组合顺序是 Projection × View × Model</li>
+  <li>透视投影产生近大远小效果，正交投影没有透视</li>
+  <li>最终通过透视除法得到屏幕坐标</li>
+</ol>
+
+<p>MVP矩阵是理解渲染流水线的关键。掌握了它，你就理解了3D图形是如何变成屏幕上的2D图像的！至此，数学篇就结束了。接下来的哲学彩蛋篇，我们将跳出技术，思考一些有趣的问题——如果蝙蝠有文明，它们的"图形学"会是什么样的？</p>

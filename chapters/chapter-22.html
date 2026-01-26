@@ -1,0 +1,161 @@
+<article class="chapter-container">
+  <header class="chapter-header">
+    <div class="chapter-number">第22章</div>
+    <h1 class="chapter-title">描边原理</h1>
+    <p class="chapter-subtitle">化学置换反应的启示，只和外层发生反应</p>
+    <span class="chapter-section-tag">效果原理篇</span>
+  </header>
+  
+  <div class="chapter-body">
+    <h2>🎮 动手试试：描边效果</h2>
+    
+    <p>调节描边宽度和颜色，观察描边是如何"包裹"在图形外围的：</p>
+    
+    <div class="interactive-demo" id="outline-demo" data-demo="outline">
+      <canvas id="outlineCanvas" width="280" height="200"></canvas>
+      <div class="demo-controls">
+        <div class="control-group">
+          <label>描边宽度：<span id="outlineWidthValue">2</span></label>
+          <input type="range" id="outlineWidth" min="1" max="8" step="1" value="2">
+        </div>
+        <div class="button-row">
+          <span class="button-label">颜色：</span>
+          <button id="outline-color-red" class="color-btn active" style="background:#ff6432">红</button>
+          <button id="outline-color-green" class="color-btn" style="background:#32c864">绿</button>
+          <button id="outline-color-blue" class="color-btn" style="background:#3296ff">蓝</button>
+          <button id="outline-color-black" class="color-btn" style="background:#1e1e1e;color:#fff">黑</button>
+        </div>
+        <div class="control-group">
+          <label><input type="checkbox" id="outlineOnly"> 淡化原图，突出描边</label>
+        </div>
+      </div>
+    </div>
+    
+    <blockquote>
+      <p>💡 <strong>观察要点</strong>：</p>
+      <ul>
+        <li>描边只出现在图形的<strong>外围</strong>，不会覆盖图形本身</li>
+        <li>增加描边宽度，检查范围变大，描边就变粗</li>
+        <li>原理：在透明像素处检查周围是否有不透明像素</li>
+      </ul>
+    </blockquote>
+    
+    <h2>从初中化学说起</h2>
+    
+    <p>还记得初中化学学过的<strong>置换反应</strong>吗？</p>
+    
+    <p>比如把一根铁钉放进硫酸铜溶液里，铁会把铜置换出来，铁钉表面会镀上一层红色的铜。</p>
+    
+    <blockquote>
+      <p>Fe + CuSO₄ → FeSO₄ + Cu</p>
+    </blockquote>
+    
+    <p>但你有没有想过一个问题：<strong>为什么置换反应没有把铁钉里面的铁也一起置换掉？</strong></p>
+    
+    <h2>答案藏在"表面"</h2>
+    
+    <p>因为置换反应<strong>只发生在表面</strong>！</p>
+    
+    <p>硫酸铜溶液只能接触到铁钉的外表面，所以只有表面的铁原子参与了反应。一旦表面的铁被置换成铜，这层铜就像一个"壳"一样，把里面的铁保护起来了。</p>
+    
+    <div class="life-analogy">
+      <h4>🧪 生活类比</h4>
+      <p>就像给苹果削皮，你只能削掉最外面那一层。削完之后，新露出来的果肉又变成了"最外层"。你永远只能处理当前的表面。</p>
+    </div>
+    
+    <h2>图形学中的描边</h2>
+    
+    <p>描边效果的原理和置换反应惊人地相似！</p>
+    
+    <p>在图形学中，描边的核心思想是：<strong>找到物体的边缘，然后只在边缘处绘制颜色</strong>。</p>
+    
+    <h3>最简单的描边：检查周围是否透明</h3>
+    
+    <p>对于一张带透明通道的图片（比如游戏里的角色立绘），最简单的描边方法是：</p>
+    
+    <blockquote>
+      <p>如果当前像素是不透明的，但它周围有透明像素，那它就是边缘！</p>
+    </blockquote>
+    
+    <pre><code>// 最简单的描边shader
+uniform sampler2D texture;
+uniform vec2 texelSize;      // 1.0 / 纹理尺寸
+uniform vec4 outlineColor;   // 描边颜色
+
+void main() {
+  vec2 uv = gl_FragCoord.xy * texelSize;
+  vec4 color = texture2D(texture, uv);
+  
+  // 如果当前像素是透明的，检查周围是否有不透明像素
+  if (color.a < 0.1) {
+    // 采样上下左右四个方向
+    float up    = texture2D(texture, uv + vec2(0, 1) * texelSize).a;
+    float down  = texture2D(texture, uv + vec2(0, -1) * texelSize).a;
+    float left  = texture2D(texture, uv + vec2(-1, 0) * texelSize).a;
+    float right = texture2D(texture, uv + vec2(1, 0) * texelSize).a;
+    
+    // 如果周围有任何不透明像素，这里就是描边位置
+    if (up > 0.1 || down > 0.1 || left > 0.1 || right > 0.1) {
+      gl_FragColor = outlineColor;  // 画描边
+      return;
+    }
+  }
+  
+  gl_FragColor = color;  // 否则保持原样
+}</code></pre>
+    
+    <p>就这么简单！核心逻辑只有一句话：<strong>透明像素旁边有不透明像素 = 边缘</strong></p>
+    
+    <h3>加粗描边？多采样几圈！</h3>
+    
+    <p>想要更粗的描边？只需要检查更远的像素：</p>
+    
+    <pre><code>// 检查周围2像素范围内是否有不透明像素
+for (int x = -2; x <= 2; x++) {
+  for (int y = -2; y <= 2; y++) {
+    vec2 offset = vec2(x, y) * texelSize;
+    if (texture2D(texture, uv + offset).a > 0.1) {
+      gl_FragColor = outlineColor;
+      return;
+    }
+  }
+}</code></pre>
+    
+    <h2>为什么只有边缘会被"描"？</h2>
+    
+    <p>回到置换反应的类比：</p>
+    
+    <ul>
+      <li><strong>物体内部的像素</strong> → 周围都是不透明的 → 不是边缘</li>
+      <li><strong>背景的透明像素</strong> → 周围都是透明的 → 不是边缘</li>
+      <li><strong>物体边缘的透明像素</strong> → 旁边有不透明像素 → 这才是边缘！</li>
+    </ul>
+    
+    <p>就像置换反应只发生在铁和溶液的接触面，描边也只发生在"透明"和"不透明"的交界处。</p>
+    
+    <div class="key-point">
+      <h4>💡 核心理解</h4>
+      <p>描边的本质就是<strong>找边界</strong>。透明和不透明的交界处，就是我们要描边的地方。</p>
+    </div>
+    
+    <h2>小结</h2>
+    
+    <p>描边原理可以用一句话概括：</p>
+    
+    <blockquote>
+      <p><strong>只处理表面，不影响内部</strong>——这和化学置换反应的道理是一样的。</p>
+    </blockquote>
+    
+    <p>最简单的描边算法：检查当前透明像素的周围有没有不透明像素。有的话，就在这里画上描边颜色。</p>
+    
+    <div class="chapter-summary">
+      <h4>📝 本章要点</h4>
+      <ul>
+        <li>置换反应只发生在物质表面，因为内部被外层保护</li>
+        <li>描边效果只出现在物体边缘，因为只有边缘处"透明"和"不透明"相邻</li>
+        <li>最简单的描边：检查透明像素周围是否有不透明像素</li>
+        <li>想要更粗的描边，就检查更大范围的周围像素</li>
+      </ul>
+    </div>
+  </div>
+</article>

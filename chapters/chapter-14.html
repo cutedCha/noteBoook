@@ -1,0 +1,106 @@
+<h2>折射原理</h2>
+
+<p>把筷子插进水杯里，筷子看起来"断"了；游泳池的水看起来比实际浅；钻石闪闪发光……这些现象背后都有一个共同的原因——<strong>折射</strong>。</p>
+
+<h3>🎮 动手试试：光的折射</h3>
+
+<p>调节折射率和入射角，观察光从空气进入液体时的折射现象：</p>
+
+<div class="interactive-demo" id="refraction-demo" data-demo="refraction">
+  <canvas id="refractionCanvas" width="320" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <span class="button-label">材质：</span>
+      <button id="presetWater" class="refract-preset-btn active">水</button>
+      <button id="presetGlass" class="refract-preset-btn">玻璃</button>
+      <button id="presetDiamond" class="refract-preset-btn">钻石</button>
+    </div>
+    <div class="control-group">
+      <label>折射率：<span id="liquidIndexValue">1.33</span></label>
+      <input type="range" id="liquidIndex" min="1.0" max="2.5" step="0.01" value="1.33">
+    </div>
+    <div class="control-group">
+      <label>入射角：<span id="incidentAngleValue">45</span>°</label>
+      <input type="range" id="incidentAngle" min="0" max="89" value="45">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+<p>💡 <strong>观察要点</strong>：</p>
+<ul>
+  <li>光从<strong>低折射率</strong>（空气）进入<strong>高折射率</strong>（液体）时，折射角<strong>小于</strong>入射角</li>
+  <li>折射率越高，光线弯折越明显</li>
+  <li>试试调节不同材质，观察折射角的变化！</li>
+  <li>钻石折射率高达2.42，光线弯折最明显</li>
+</ul>
+</blockquote>
+
+<h3>光为什么会"拐弯"？</h3>
+
+<p>想象你在沙滩上跑步，突然跑进了水里：</p>
+
+<ul>
+  <li>在沙滩上，你跑得很快</li>
+  <li>进入水中，阻力变大，你跑得慢了</li>
+  <li>如果你斜着进入水中，两条腿先后进入水里的时间不同</li>
+  <li>先进水的那条腿先变慢，导致你的方向发生改变</li>
+</ul>
+
+<blockquote>
+<p>光也是一样！光在不同介质中传播速度不同，斜着进入新介质时，方向就会发生改变。这就是折射。</p>
+</blockquote>
+
+<h3>折射定律（斯涅尔定律）</h3>
+
+<p>折射遵循一个简单的数学规律：<strong>n₁ × sin(θ₁) = n₂ × sin(θ₂)</strong></p>
+
+<ul>
+  <li><strong>n</strong>：折射率，表示光在该介质中的"慢"程度</li>
+  <li><strong>θ₁</strong>：入射角（光线与法线的夹角）</li>
+  <li><strong>θ₂</strong>：折射角</li>
+</ul>
+
+<p>常见材质的折射率：</p>
+<ul>
+  <li>真空/空气：1.0</li>
+  <li>水：1.33</li>
+  <li>玻璃：1.5</li>
+  <li>钻石：2.42</li>
+</ul>
+
+<h3>生活中的折射现象</h3>
+
+<p>折射无处不在：</p>
+
+<ul>
+  <li><strong>水中的筷子</strong>：光从水中进入空气时折射，筷子看起来"断"了</li>
+  <li><strong>游泳池深度</strong>：池底的光折射后进入眼睛，看起来比实际浅</li>
+  <li><strong>海市蜃楼</strong>：热空气和冷空气折射率不同，产生幻象</li>
+  <li><strong>彩虹</strong>：不同颜色的光折射角度不同，白光被分解</li>
+</ul>
+
+<h3>全反射：折射的极限</h3>
+
+<p>当光从高折射率介质进入低折射率介质时，如果入射角太大，光会完全反射回去，不发生折射。这叫<strong>全反射</strong>。</p>
+
+<p>临界角的计算：<strong>θc = arcsin(n₂/n₁)</strong></p>
+
+<ul>
+  <li><strong>光纤通信</strong>：利用全反射让光在光纤中传播</li>
+  <li><strong>钻石闪耀</strong>：钻石折射率高，容易发生全反射，光在内部多次反射</li>
+  <li><strong>水下看水面</strong>：从水下往上看，超过临界角的方向会看到水底的倒影</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>折射是因为光在不同介质中传播速度不同</li>
+  <li>斯涅尔定律描述了入射角和折射角的关系</li>
+  <li>折射率越高的材质，光在其中传播越慢</li>
+  <li>全反射是折射的极限情况，有很多实际应用</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>放大镜原理</strong>——如何用Shader实现向外扭曲的效果！</p>

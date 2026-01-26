@@ -1,0 +1,129 @@
+<h2>渲染一张图的流程</h2>
+
+<p>前面我们学了很多概念：光照、流水线、DC……现在让我们用一个最简单的例子，把这些知识串起来，看看渲染一张图到底是怎么回事。</p>
+
+<h3>最简单的情况</h3>
+
+<p>假设我们要在屏幕上显示一张图片，比如一张猫咪的照片。这是最简单的渲染情况，甚至<strong>不需要3D变换</strong>。</p>
+
+<blockquote>
+<p>就像在墙上贴一张海报，海报本身就是平的，不需要考虑透视和旋转。</p>
+</blockquote>
+
+<h3>渲染一张图的步骤</h3>
+
+<h4>第一步：准备顶点数据</h4>
+
+<p>即使是一张2D图片，我们也需要告诉GPU"画在哪里"。最简单的方式是用两个三角形拼成一个矩形：</p>
+
+<pre><code class="language-javascript">// 一个矩形需要4个顶点
+const vertices = [
+  // 位置(x, y)    纹理坐标(u, v)
+  -1.0, -1.0,      0.0, 0.0,  // 左下角
+   1.0, -1.0,      1.0, 0.0,  // 右下角
+   1.0,  1.0,      1.0, 1.0,  // 右上角
+  -1.0,  1.0,      0.0, 1.0,  // 左上角
+];
+
+// 用索引定义两个三角形
+const indices = [
+  0, 1, 2,  // 第一个三角形：左下、右下、右上
+  0, 2, 3,  // 第二个三角形：左下、右上、左上
+];</code></pre>
+
+<h4>第二步：准备纹理</h4>
+
+<p>把图片加载到GPU的显存中：</p>
+
+<pre><code class="language-javascript">// 加载图片作为纹理
+async function loadTexture(gl, imageUrl) {
+  const image = await loadImage(imageUrl);
+  
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  
+  // 把图片数据传给GPU
+  gl.texImage2D(
+    gl.TEXTURE_2D, 0, gl.RGBA,
+    gl.RGBA, gl.UNSIGNED_BYTE, image
+  );
+  
+  return texture;
+}</code></pre>
+
+<h4>第三步：编写着色器</h4>
+
+<p>着色器告诉GPU如何处理每个顶点和像素：</p>
+
+<pre><code class="language-glsl">// 顶点着色器 - 处理顶点位置
+attribute vec2 a_Position;
+attribute vec2 a_TexCoord;
+varying vec2 v_TexCoord;
+
+void main() {
+  gl_Position = vec4(a_Position, 0.0, 1.0);
+  v_TexCoord = a_TexCoord;
+}
+
+// 片元着色器 - 处理像素颜色
+precision mediump float;
+uniform sampler2D u_Texture;
+varying vec2 v_TexCoord;
+
+void main() {
+  // 从纹理中采样颜色
+  gl_FragColor = texture2D(u_Texture, v_TexCoord);
+}</code></pre>
+
+<h4>第四步：发出Draw Call</h4>
+
+<pre><code class="language-javascript">// 渲染！
+function render(gl) {
+  // 清空屏幕
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  // 绑定着色器、顶点数据、纹理...
+  // （省略设置代码）
+  
+  // 发出Draw Call - 画6个顶点（2个三角形）
+  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+}</code></pre>
+
+<h3>流程图解</h3>
+
+<pre><code>图片文件 → 加载到内存 → 上传到GPU显存（纹理）
+                              ↓
+顶点数据 → 上传到GPU → 顶点着色器处理
+                              ↓
+                        光栅化（三角形→像素）
+                              ↓
+                        片元着色器（采样纹理）
+                              ↓
+                        显示在屏幕上</code></pre>
+
+<h3>为什么这么"麻烦"？</h3>
+
+<p>你可能会想：就显示一张图片，为什么要这么多步骤？</p>
+
+<p>原因是这套流程是<strong>通用的</strong>：</p>
+
+<ul>
+  <li>同样的流程可以画2D图片</li>
+  <li>也可以画3D模型</li>
+  <li>还可以加各种特效</li>
+</ul>
+
+<p>一旦你理解了这个基础流程，后面学习更复杂的渲染就容易多了。</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>即使是2D图片，也需要用三角形来渲染</li>
+  <li>渲染流程：准备顶点 → 准备纹理 → 着色器处理 → Draw Call</li>
+  <li>顶点着色器处理位置，片元着色器处理颜色</li>
+  <li>这套流程是通用的，适用于各种渲染需求</li>
+</ol>
+
+<p>在下一章，我们将深入学习<strong>顶点</strong>——3D模型最基本的组成单位！</p>

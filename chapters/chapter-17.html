@@ -1,0 +1,193 @@
+<h2>噪声是什么</h2>
+
+<p>大自然中没有完美的直线，没有纯净的颜色，一切都带着随机的"杂乱"。这种杂乱在图形学中有个专业名词——<strong>噪声</strong>。</p>
+
+<h3>🎮 动手试试：噪声长什么样？</h3>
+
+<p>切换不同的噪声类型，调节参数，看看各种噪声的区别：</p>
+
+<div class="interactive-demo" id="noise-demo" data-demo="noise">
+  <canvas id="noiseCanvas" width="300" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <span class="button-label">类型：</span>
+      <button id="noise-white" class="noise-type-btn">白噪声</button>
+      <button id="noise-value" class="noise-type-btn">值噪声</button>
+      <button id="noise-perlin" class="noise-type-btn active">Perlin</button>
+      <button id="noise-simplex" class="noise-type-btn">Simplex</button>
+      <button id="noise-fbm" class="noise-type-btn">分形</button>
+    </div>
+    <div class="control-group">
+      <label>缩放：<span id="noiseScaleValue">20</span></label>
+      <input type="range" id="noiseScale" min="5" max="100" value="20">
+    </div>
+    <div class="control-group">
+      <label>分形层数：<span id="noiseOctavesValue">4</span></label>
+      <input type="range" id="noiseOctaves" min="1" max="8" value="4">
+    </div>
+    <div class="control-group">
+      <label>随机种子：<span id="noiseSeedValue">12345</span></label>
+      <input type="range" id="noiseSeed" min="1" max="99999" value="12345">
+    </div>
+    <div class="button-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="noiseAnimate">
+        <span>动画</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>观察要点</strong>：</p>
+  <ul>
+    <li><strong>白噪声</strong>：像电视雪花，每个点完全随机</li>
+    <li><strong>值噪声</strong>：平滑了一些，但还是有点"块状"</li>
+    <li><strong>Perlin噪声</strong>：最自然，像云朵或山脉</li>
+    <li><strong>Simplex噪声</strong>：类似Perlin，但计算更快</li>
+    <li><strong>分形噪声</strong>：多层叠加，细节更丰富</li>
+  </ul>
+</blockquote>
+
+<h3>为什么需要噪声？</h3>
+
+<p>想象一下，如果游戏中的草地每一片草都整齐排列，云朵是完美的圆形，火焰是规则的三角形……那会多么假！</p>
+
+<blockquote>
+<p>噪声是让计算机生成的图像看起来"自然"的秘密武器。它模拟了大自然中无处不在的随机性。</p>
+</blockquote>
+
+<h3>噪声 vs 随机数</h3>
+
+<p>你可能会问：直接用随机数不行吗？</p>
+
+<ul>
+  <li><strong>随机数</strong>：每个点完全独立，像电视雪花屏</li>
+  <li><strong>噪声</strong>：相邻的点有关联，变化是平滑的</li>
+</ul>
+
+
+<pre><code class="language-javascript">// 随机数 vs 噪声的对比
+function randomNoise(x, y) {
+  // 完全随机，每个点独立
+  return Math.random();
+}
+
+function smoothNoise(x, y) {
+  // 平滑噪声，相邻点有关联
+  // 这里用简化的实现
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = x - x0;
+  const fy = y - y0;
+  
+  // 四个角的随机值
+  const v00 = hash(x0, y0);
+  const v10 = hash(x0 + 1, y0);
+  const v01 = hash(x0, y0 + 1);
+  const v11 = hash(x0 + 1, y0 + 1);
+  
+  // 双线性插值，让变化平滑
+  return bilinearInterpolate(v00, v10, v01, v11, fx, fy);
+}</code></pre>
+
+<h3>Perlin噪声：噪声界的明星</h3>
+
+<p>1983年，Ken Perlin发明了一种特殊的噪声算法，后来被称为<strong>Perlin噪声</strong>。它的特点是：</p>
+
+<ul>
+  <li>看起来自然、有机</li>
+  <li>可以控制"粗糙程度"</li>
+  <li>计算效率高</li>
+</ul>
+
+<blockquote>
+<p>Perlin噪声最初是为电影《Tron》开发的，后来Ken Perlin因此获得了奥斯卡技术成就奖！</p>
+</blockquote>
+
+<pre><code class="language-javascript">// 简化版Perlin噪声
+function perlinNoise(x, y) {
+  // 获取整数部分和小数部分
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+  
+  // 平滑插值函数（让过渡更自然）
+  const u = smoothstep(xf);
+  const v = smoothstep(yf);
+  
+  // 四个角的梯度向量点积
+  const n00 = dotGridGradient(xi, yi, x, y);
+  const n10 = dotGridGradient(xi + 1, yi, x, y);
+  const n01 = dotGridGradient(xi, yi + 1, x, y);
+  const n11 = dotGridGradient(xi + 1, yi + 1, x, y);
+  
+  // 双线性插值
+  const nx0 = lerp(n00, n10, u);
+  const nx1 = lerp(n01, n11, u);
+  return lerp(nx0, nx1, v);
+}
+
+function smoothstep(t) {
+  // 平滑的S形曲线
+  return t * t * (3 - 2 * t);
+}</code></pre>
+
+<h3>分形噪声：叠加出复杂性</h3>
+
+<p>单层噪声看起来太"光滑"了。通过叠加多层不同频率的噪声，可以产生更丰富的细节：</p>
+
+<pre><code class="language-javascript">// 分形噪声（FBM - Fractal Brownian Motion）
+function fbm(x, y, octaves) {
+  let value = 0;
+  let amplitude = 1.0;  // 振幅
+  let frequency = 1.0;  // 频率
+  let maxValue = 0;     // 用于归一化
+  
+  for (let i = 0; i < octaves; i++) {
+    value += amplitude * perlinNoise(x * frequency, y * frequency);
+    maxValue += amplitude;
+    
+    amplitude *= 0.5;   // 每层振幅减半
+    frequency *= 2.0;   // 每层频率加倍
+  }
+  
+  return value / maxValue;  // 归一化到[0, 1]
+}</code></pre>
+
+<h3>Shader中的噪声</h3>
+
+<pre><code class="language-glsl">// GLSL中的简单噪声函数
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  
+  // 四个角的值
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  
+  // 平滑插值
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}</code></pre>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>噪声是一种"有规律的随机"，相邻的值有关联</li>
+  <li>Perlin噪声是最著名的噪声算法，看起来自然、有机</li>
+  <li>分形噪声通过叠加多层噪声产生更丰富的细节</li>
+  <li>噪声是程序化生成的基础工具</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>噪声的应用</strong>——看看噪声能创造出什么神奇的效果！</p>

@@ -1,0 +1,529 @@
+/**
+ * styles.css - 主样式文件
+ * 定义CSS变量（配色、字体、间距）和基础样式
+ * Requirements: 8.1, 8.2, 8.3
+ */
+
+/* ========================================
+   CSS 变量定义
+   ======================================== */
+
+:root {
+  /* 配色方案 - 图书风格 */
+  /* 纸张色系 */
+  --color-paper: #F5F0E6;           /* 主纸张色 - 米黄色 */
+  --color-paper-light: #FAF8F3;     /* 浅纸张色 */
+  --color-paper-dark: #E8E0D0;      /* 深纸张色 */
+  --color-paper-aged: #EDE4D3;      /* 陈旧纸张色 */
+  
+  /* 墨色系 */
+  --color-ink: #2C2416;             /* 主墨色 - 深棕黑 */
+  --color-ink-light: #4A3F2F;       /* 浅墨色 */
+  --color-ink-muted: #6B5D4D;       /* 柔和墨色 */
+  --color-ink-faded: #8B7D6B;       /* 褪色墨色 */
+  
+  /* 装饰色系 */
+  --color-accent: #8B4513;          /* 主装饰色 - 马鞍棕 */
+  --color-accent-light: #A0522D;    /* 浅装饰色 - 赭石 */
+  --color-accent-dark: #6B3410;     /* 深装饰色 */
+  --color-gold: #C9A227;            /* 金色装饰 */
+  --color-gold-light: #D4AF37;      /* 浅金色 */
+  
+  /* 功能色 */
+  --color-success: #4A7C59;         /* 成功/已读 - 墨绿 */
+  --color-warning: #B8860B;         /* 警告 - 暗金 */
+  --color-error: #8B3A3A;           /* 错误 - 暗红 */
+  --color-link: #5D4E37;            /* 链接色 */
+  --color-link-hover: #8B4513;      /* 链接悬停色 */
+  
+  /* 阴影色 */
+  --color-shadow: rgba(44, 36, 22, 0.15);
+  --color-shadow-dark: rgba(44, 36, 22, 0.3);
+  --color-shadow-light: rgba(44, 36, 22, 0.08);
+  
+  /* 字体家族 - 适合中文阅读 */
+  --font-family-serif: "Noto Serif SC", "Source Han Serif SC", "思源宋体", 
+                       "Songti SC", "STSong", "华文宋体", 
+                       "SimSun", "宋体", serif;
+  --font-family-sans: "Noto Sans SC", "Source Han Sans SC", "思源黑体",
+                      "PingFang SC", "Microsoft YaHei", "微软雅黑",
+                      "Hiragino Sans GB", sans-serif;
+  --font-family-mono: "Fira Code", "Source Code Pro", "JetBrains Mono",
+                      "Consolas", "Monaco", monospace;
+  
+  /* 字体大小 */
+  --font-size-xs: 0.75rem;          /* 12px */
+  --font-size-sm: 0.875rem;         /* 14px */
+  --font-size-base: 1rem;           /* 16px */
+  --font-size-md: 1.125rem;         /* 18px */
+  --font-size-lg: 1.25rem;          /* 20px */
+  --font-size-xl: 1.5rem;           /* 24px */
+  --font-size-2xl: 1.875rem;        /* 30px */
+  --font-size-3xl: 2.25rem;         /* 36px */
+  --font-size-4xl: 3rem;            /* 48px */
+  
+  /* 行高 */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.8;
+  --line-height-loose: 2;
+  
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* 间距规范 */
+  --spacing-xs: 0.25rem;            /* 4px */
+  --spacing-sm: 0.5rem;             /* 8px */
+  --spacing-md: 1rem;               /* 16px */
+  --spacing-lg: 1.5rem;             /* 24px */
+  --spacing-xl: 2rem;               /* 32px */
+  --spacing-2xl: 3rem;              /* 48px */
+  --spacing-3xl: 4rem;              /* 64px */
+  
+  /* 边距规范 */
+  --margin-page: 2rem;              /* 页面边距 */
+  --margin-section: 1.5rem;         /* 章节间距 */
+  --margin-paragraph: 1rem;         /* 段落间距 */
+  
+  /* 内边距规范 */
+  --padding-page: 2.5rem;           /* 页面内边距 */
+  --padding-card: 1.5rem;           /* 卡片内边距 */
+  --padding-button: 0.75rem 1.5rem; /* 按钮内边距 */
+  
+  /* 圆角 */
+  --radius-sm: 0.25rem;             /* 4px */
+  --radius-md: 0.5rem;              /* 8px */
+  --radius-lg: 1rem;                /* 16px */
+  --radius-xl: 1.5rem;              /* 24px */
+  
+  /* 边框 */
+  --border-width: 1px;
+  --border-width-thick: 2px;
+  --border-color: var(--color-ink-faded);
+  --border-color-light: rgba(107, 93, 77, 0.3);
+  
+  /* 过渡动画 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  --transition-page-flip: 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
+  
+  /* 层级 (z-index) */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-tooltip: 400;
+  --z-loading: 500;
+  
+  /* 书籍尺寸 */
+  --book-width: 900px;
+  --book-height: 600px;
+  --book-spine-width: 30px;
+  --page-thickness: 3px;
+  
+  /* 触摸区域最小尺寸 (移动端可访问性) */
+  --touch-target-min: 44px;
+}
+
+/* ========================================
+   基础重置样式
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-family-serif);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-ink);
+  background-color: var(--color-paper-dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ========================================
+   排版样式
+   ======================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-serif);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-ink);
+  margin-bottom: var(--spacing-md);
+}
+
+h1 {
+  font-size: var(--font-size-3xl);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+}
+
+h4 {
+  font-size: var(--font-size-lg);
+}
+
+h5 {
+  font-size: var(--font-size-md);
+}
+
+h6 {
+  font-size: var(--font-size-base);
+}
+
+p {
+  margin-bottom: var(--margin-paragraph);
+  text-align: justify;
+  text-indent: 2em;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+strong, b {
+  font-weight: var(--font-weight-bold);
+}
+
+em, i {
+  font-style: italic;
+}
+
+/* 代码样式 - Requirements: 8.2 (字体一致性) */
+code {
+  font-family: var(--font-family-mono);
+  font-size: 0.9em;
+  font-weight: var(--font-weight-normal);
+  background-color: var(--color-paper-dark);
+  padding: 0.2em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-dark);
+}
+
+pre {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-relaxed);
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin-bottom: var(--margin-paragraph);
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* 引用样式 - Requirements: 8.1, 8.2, 8.3 */
+blockquote {
+  border-left: 4px solid var(--color-accent);
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  font-family: var(--font-family-serif);
+  font-style: italic;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-ink-muted);
+}
+
+/* 列表样式 - Requirements: 8.2, 8.3 */
+ul, ol {
+  margin-bottom: var(--margin-paragraph);
+  padding-left: var(--spacing-xl);
+  font-family: var(--font-family-serif);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+}
+
+li {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 图片样式 - Requirements: 8.3 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+figure {
+  margin: var(--spacing-lg) 0;
+  text-align: center;
+}
+
+figcaption {
+  font-family: var(--font-family-serif);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  color: var(--color-ink-muted);
+  margin-top: var(--spacing-sm);
+}
+
+/* 分隔线 */
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color-light);
+  margin: var(--spacing-xl) 0;
+}
+
+/* ========================================
+   通用工具类
+   ======================================== */
+
+/* 隐藏元素 */
+.hidden {
+  display: none !important;
+}
+
+/* 视觉隐藏但保持可访问性 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 文本对齐 */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* 文本样式 */
+.text-muted {
+  color: var(--color-ink-muted);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+/* 间距工具类 */
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+/* ========================================
+   按钮基础样式
+   Requirements: 8.1, 8.2, 8.3, 8.4
+   ======================================== */
+
+button {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-ink);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all var(--transition-fast);
+}
+
+button:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 主要按钮 */
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-paper);
+  padding: var(--padding-button);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  letter-spacing: 0.02em;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-accent-dark);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-accent);
+  padding: var(--padding-button);
+  border: var(--border-width-thick) solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  letter-spacing: 0.02em;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: var(--color-paper);
+}
+
+/* ========================================
+   滚动条样式
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-paper-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-faded);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-muted);
+}
+
+/* Firefox 滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-faded) var(--color-paper-dark);
+}
+
+/* ========================================
+   选中文本样式
+   ======================================== */
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-paper);
+}
+
+::-moz-selection {
+  background-color: var(--color-accent);
+  color: var(--color-paper);
+}
+
+/* ========================================
+   统一图标和装饰元素样式
+   Requirements: 8.4
+   ======================================== */
+
+/* 图标基础样式 */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-sans);
+  font-style: normal;
+  line-height: 1;
+}
+
+/* 装饰性分隔符 */
+.decorative-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+  color: var(--color-ink-faded);
+}
+
+.decorative-divider::before,
+.decorative-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border-color-light) 50%,
+    transparent 100%
+  );
+}
+
+.decorative-divider span {
+  padding: 0 var(--spacing-md);
+  font-family: var(--font-family-serif);
+  font-size: var(--font-size-lg);
+}
+
+/* 统一的勾选标记样式 */
+.checkmark {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-sans);
+}
+
+/* 统一的警告标记样式 */
+.warning-mark {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-sans);
+}
+
+/* 统一的错误标记样式 */
+.error-mark {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-sans);
+}

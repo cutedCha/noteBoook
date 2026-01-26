@@ -1,0 +1,185 @@
+<h2>Bloom光晕原理</h2>
+
+<p>在电影和游戏中，当镜头对准太阳或明亮的灯光时，光源周围会出现柔和的光晕。这种效果叫做<strong>Bloom</strong>，它让画面更有电影感。</p>
+
+<h3>🎮 动手试试：Bloom效果</h3>
+
+<p>调节参数，观察Bloom光晕的变化。点击按钮切换显示模式，看看每个步骤的效果：</p>
+
+<div class="interactive-demo" id="bloom-demo" data-demo="bloom">
+  <canvas id="bloomCanvas" width="280" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <span class="button-label">显示：</span>
+      <button id="bloom-mode-original" class="mode-btn">原图</button>
+      <button id="bloom-mode-bright" class="mode-btn">高亮</button>
+      <button id="bloom-mode-blur" class="mode-btn">模糊</button>
+      <button id="bloom-mode-final" class="mode-btn active">效果</button>
+    </div>
+    <div class="control-group">
+      <label>阈值：<span id="bloomThresholdValue">0.50</span></label>
+      <input type="range" id="bloomThreshold" min="0.3" max="0.9" step="0.05" value="0.5">
+    </div>
+    <div class="control-group">
+      <label>模糊：<span id="bloomBlurValue">8</span></label>
+      <input type="range" id="bloomBlur" min="1" max="20" step="1" value="8">
+    </div>
+    <div class="control-group">
+      <label>强度：<span id="bloomIntensityValue">1.0</span></label>
+      <input type="range" id="bloomIntensity" min="0" max="2" step="0.1" value="1.0">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>观察要点</strong>：</p>
+  <ul>
+    <li><strong>原图</strong>：几个发光的圆形光源</li>
+    <li><strong>高亮</strong>：只保留超过阈值的亮区域（降低阈值看到更多）</li>
+    <li><strong>模糊</strong>：对高亮区域进行高斯模糊，形成光晕</li>
+    <li><strong>效果</strong>：把模糊后的光晕叠加回原图，完成Bloom！</li>
+  </ul>
+</blockquote>
+
+<h3>为什么会有光晕？</h3>
+
+<p>这要从我们的眼睛说起：</p>
+
+<ul>
+  <li>眼睛里的感光细胞有一个<strong>阈值</strong></li>
+  <li>当光线太强，超过阈值时，细胞会"过载"</li>
+  <li>过载的信号会"溢出"到周围的细胞</li>
+  <li>于是我们看到光源周围有一圈光晕</li>
+</ul>
+
+<blockquote>
+<p>Bloom效果模拟的就是这种"感光细胞过载"的现象，让明亮的物体看起来在"发光"。</p>
+</blockquote>
+
+<h3>相机中的Bloom</h3>
+
+<p>相机镜头也会产生类似的效果：</p>
+
+<ul>
+  <li>镜头内部有轻微的散射</li>
+  <li>强光源会在镜头上产生光晕</li>
+  <li>这种效果在电影中被刻意保留，增加真实感</li>
+</ul>
+
+<h3>Bloom的实现步骤</h3>
+
+<p>Bloom效果通常分为三个步骤：</p>
+
+<ol>
+  <li><strong>提取高亮</strong>：找出画面中超过阈值的亮区域</li>
+  <li><strong>模糊处理</strong>：对高亮区域进行模糊</li>
+  <li><strong>叠加合成</strong>：把模糊后的高亮叠加回原图</li>
+</ol>
+
+<pre><code class="language-javascript">// Bloom效果的实现流程
+function applyBloom(image, threshold, blurRadius, intensity) {
+  // 步骤1：提取高亮区域
+  const brightPass = extractBright(image, threshold);
+  
+  // 步骤2：模糊高亮区域
+  const blurred = gaussianBlur(brightPass, blurRadius);
+  
+  // 步骤3：叠加到原图
+  const result = additive(image, blurred, intensity);
+  
+  return result;
+}</code></pre>
+
+<h3>步骤1：提取高亮</h3>
+
+<pre><code class="language-glsl">// 高亮提取着色器
+precision mediump float;
+
+uniform sampler2D u_Texture;
+uniform float u_Threshold;  // 亮度阈值
+
+varying vec2 v_TexCoord;
+
+void main() {
+  vec4 color = texture2D(u_Texture, v_TexCoord);
+  
+  // 计算亮度
+  float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+  
+  // 只保留超过阈值的部分
+  if (brightness > u_Threshold) {
+    // 保留高亮，减去阈值让过渡更平滑
+    gl_FragColor = color * (brightness - u_Threshold);
+  } else {
+    gl_FragColor = vec4(0.0);
+  }
+}</code></pre>
+
+<h3>步骤2：模糊高亮</h3>
+
+<p>对提取出的高亮区域进行高斯模糊（我们在第12章学过）：</p>
+
+<pre><code class="language-javascript">// 多次模糊，产生更柔和的光晕
+function multiPassBlur(brightTexture, passes) {
+  let current = brightTexture;
+  
+  for (let i = 0; i < passes; i++) {
+    // 水平模糊
+    current = horizontalBlur(current);
+    // 垂直模糊
+    current = verticalBlur(current);
+  }
+  
+  return current;
+}</code></pre>
+
+<h3>步骤3：叠加合成</h3>
+
+<pre><code class="language-glsl">// 最终合成着色器
+precision mediump float;
+
+uniform sampler2D u_OriginalTexture;  // 原始图像
+uniform sampler2D u_BloomTexture;     // 模糊后的高亮
+uniform float u_BloomIntensity;       // 光晕强度
+
+varying vec2 v_TexCoord;
+
+void main() {
+  vec4 original = texture2D(u_OriginalTexture, v_TexCoord);
+  vec4 bloom = texture2D(u_BloomTexture, v_TexCoord);
+  
+  // 叠加混合
+  gl_FragColor = original + bloom * u_BloomIntensity;
+}</code></pre>
+
+<h3>Bloom的参数调节</h3>
+
+<p>Bloom效果的质量取决于几个关键参数：</p>
+
+<ul>
+  <li><strong>阈值</strong>：决定多亮的像素会产生光晕</li>
+  <li><strong>模糊半径</strong>：光晕扩散的范围</li>
+  <li><strong>强度</strong>：光晕的明显程度</li>
+  <li><strong>模糊次数</strong>：越多次越柔和，但性能消耗越大</li>
+</ul>
+
+<h3>HDR与Bloom</h3>
+
+<p>Bloom效果在<strong>HDR（高动态范围）</strong>渲染中效果最好：</p>
+
+<blockquote>
+<p>普通图像的亮度范围是0-1，而HDR可以存储超过1的亮度值。这样，太阳可以是亮度10，灯泡是亮度5，而普通物体是0.5。Bloom只对超过阈值（比如1）的像素生效。</p>
+</blockquote>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>Bloom模拟了眼睛和相机对强光的反应</li>
+  <li>实现步骤：提取高亮 → 模糊 → 叠加</li>
+  <li>通过调节阈值、模糊半径和强度来控制效果</li>
+  <li>HDR渲染能让Bloom效果更真实</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>RenderTexture</strong>——把摄像机的渲染结果变成纹理，实现镜子和倒影！</p>

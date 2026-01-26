@@ -1,0 +1,155 @@
+<h2>后屏幕渲染是什么</h2>
+
+<p>想象一下，你戴着一副特殊的眼镜，这副眼镜可以让你看到的世界变得模糊、变色、甚至产生波纹效果。这就是<strong>后屏幕渲染</strong>（Post-Processing）的原理！</p>
+
+<h3>🎮 动手试试：后屏幕效果</h3>
+
+<p>看看这些跑步的小人，选择不同的后处理效果，观察画面的变化：</p>
+
+<div class="interactive-demo" id="postprocess-demo" data-demo="postprocess">
+  <canvas id="postprocessCanvas" width="350" height="220"></canvas>
+  <div class="demo-controls">
+    <div class="button-row">
+      <label style="color: #888; font-size: 12px; margin-right: 8px;">后处理效果：</label>
+      <select id="postprocessEffect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #555; background: #2a2a3e; color: #fff;">
+        <option value="none">无效果</option>
+        <option value="blur">模糊</option>
+        <option value="distort">扭曲（水波）</option>
+        <option value="darken">变暗</option>
+        <option value="brighten">变亮</option>
+      </select>
+      <button id="postprocessReset" class="mvp-btn" style="margin-left: 10px;">重置</button>
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>观察要点</strong>：</p>
+  <ul>
+    <li>小人们一直在跑，但后处理效果是对<strong>整个画面</strong>生效的</li>
+    <li><strong>模糊</strong>：让画面变得朦胧，常用于景深效果</li>
+    <li><strong>扭曲</strong>：水波纹效果，像透过水面看世界</li>
+    <li><strong>变暗/变亮</strong>：调整整体亮度，可用于昼夜切换</li>
+    <li>这些效果都是在场景渲染完成<strong>之后</strong>，对整张图片进行处理</li>
+  </ul>
+</blockquote>
+
+<h3>在"眼睛前面"做手脚</h3>
+
+<p>后屏幕渲染的核心思想是：</p>
+
+<ol>
+  <li>先正常渲染整个3D场景，得到一张"照片"</li>
+  <li>然后对这张"照片"进行各种处理</li>
+  <li>最后把处理后的结果显示在屏幕上</li>
+</ol>
+
+<blockquote>
+<p>就像是在你的眼睛前面蒙了一层滤镜，用shader去"骗"你的眼睛。</p>
+</blockquote>
+
+<h3>为什么叫"后"屏幕渲染？</h3>
+
+<p>因为它发生在正常渲染<strong>之后</strong>：</p>
+
+<pre><code>正常渲染流程：
+3D场景 → 渲染流水线 → 帧缓冲（一张图）→ 显示器
+
+后屏幕渲染流程：
+3D场景 → 渲染流水线 → 帧缓冲（一张图）→ 后处理shader → 最终图像 → 显示器</code></pre>
+
+<h3>实现原理</h3>
+
+<p>后屏幕渲染的关键是<strong>渲染到纹理</strong>（Render to Texture）：</p>
+
+<pre><code class="language-javascript">// 后屏幕渲染的基本流程
+function renderWithPostProcessing(scene, camera) {
+  // 1. 创建一个离屏的渲染目标
+  const renderTarget = createRenderTarget(screenWidth, screenHeight);
+  
+  // 2. 先把场景渲染到这个目标上（而不是直接渲染到屏幕）
+  setRenderTarget(renderTarget);
+  renderScene(scene, camera);
+  
+  // 3. 现在renderTarget里有了一张"照片"
+  // 把它作为纹理，用后处理shader来处理
+  setRenderTarget(screen);  // 切换回屏幕
+  
+  // 4. 画一个全屏的矩形，用后处理shader
+  drawFullscreenQuad(postProcessShader, renderTarget.texture);
+}</code></pre>
+
+<h3>荷塘月色水波效果</h3>
+
+<p>让我们来实现一个经典的后屏幕效果：圆形水波纹。想象月光照在荷塘上，水面泛起一圈圈涟漪：</p>
+
+<pre><code class="language-glsl">// 水波纹后处理shader
+precision mediump float;
+
+uniform sampler2D u_SceneTexture;  // 渲染好的场景
+uniform vec2 u_Center;              // 波纹中心
+uniform float u_Time;               // 时间
+uniform float u_WaveStrength;       // 波纹强度
+
+varying vec2 v_TexCoord;
+
+void main() {
+  vec2 uv = v_TexCoord;
+  
+  // 计算当前像素到中心的距离
+  float dist = distance(uv, u_Center);
+  
+  // 创建波纹效果：sin函数产生周期性的波动
+  float wave = sin(dist * 30.0 - u_Time * 5.0);
+  
+  // 波纹随距离衰减
+  float falloff = 1.0 - smoothstep(0.0, 0.5, dist);
+  
+  // 计算UV偏移
+  vec2 direction = normalize(uv - u_Center);
+  vec2 offset = direction * wave * u_WaveStrength * falloff;
+  
+  // 用偏移后的UV采样原图
+  vec4 color = texture2D(u_SceneTexture, uv + offset);
+  
+  gl_FragColor = color;
+}</code></pre>
+
+<h3>常见的后屏幕效果</h3>
+
+<p>后屏幕渲染可以实现很多炫酷的效果：</p>
+
+<ul>
+  <li><strong>模糊</strong>：让画面变得朦胧</li>
+  <li><strong>Bloom光晕</strong>：让亮的地方发光</li>
+  <li><strong>色调映射</strong>：调整画面的颜色风格</li>
+  <li><strong>景深</strong>：模拟相机的焦外模糊</li>
+  <li><strong>运动模糊</strong>：快速移动时的拖影效果</li>
+  <li><strong>边缘检测</strong>：描边效果</li>
+  <li><strong>扭曲</strong>：水波、热浪等效果</li>
+</ul>
+
+<h3>为什么后屏幕渲染这么有用？</h3>
+
+<ol>
+  <li><strong>统一处理</strong>：不管场景有多复杂，后处理都只处理一张图</li>
+  <li><strong>效果叠加</strong>：可以串联多个后处理效果</li>
+  <li><strong>性能可控</strong>：后处理的开销相对固定，容易优化</li>
+</ol>
+
+<blockquote>
+<p>后屏幕渲染就像是给整个游戏画面加了一个Instagram滤镜，简单却效果显著。</p>
+</blockquote>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>后屏幕渲染是在正常渲染之后，对整个画面进行处理</li>
+  <li>核心原理是"渲染到纹理"，然后用shader处理这张纹理</li>
+  <li>可以实现水波、模糊、光晕等各种炫酷效果</li>
+  <li>就像在眼睛前面蒙一层滤镜，用shader来"骗"眼睛</li>
+</ol>
+
+<p>恭喜你完成了<strong>基础概念篇</strong>的学习！在接下来的<strong>效果原理篇</strong>中，我们将深入学习各种视觉效果的实现原理，从模糊到折射，从噪声到光晕，让你掌握更多图形学的魔法！</p>

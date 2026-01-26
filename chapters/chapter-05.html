@@ -1,0 +1,128 @@
+<h2>渲染流水线是什么</h2>
+
+<p>当你在玩3D游戏时，屏幕上每秒钟要显示60张甚至更多的画面。计算机是如何在这么短的时间内，把3D世界变成2D图像的呢？答案就是<strong>渲染流水线</strong>。</p>
+
+<h3>什么是"流水线"？</h3>
+
+<p>想象一下汽车工厂的生产线：</p>
+
+<ul>
+  <li>第一站：安装底盘</li>
+  <li>第二站：安装发动机</li>
+  <li>第三站：安装车身</li>
+  <li>第四站：喷漆</li>
+  <li>第五站：质检出厂</li>
+</ul>
+
+<p>每辆车都要经过这些步骤，而且每个步骤可以同时处理不同的车。这就是<strong>流水线</strong>的概念。</p>
+
+<blockquote>
+<p>渲染流水线也是一样，3D场景中的每个物体都要经过一系列固定的处理步骤，最终变成屏幕上的像素。</p>
+</blockquote>
+
+<h3>渲染流水线的主要阶段</h3>
+
+<p>一个典型的渲染流水线包含以下阶段：</p>
+
+<h4>1. 应用阶段（CPU）</h4>
+<p>这是在CPU上进行的准备工作：</p>
+<ul>
+  <li>确定哪些物体需要渲染</li>
+  <li>准备物体的数据（顶点、纹理等）</li>
+  <li>设置渲染状态</li>
+</ul>
+
+<h4>2. 顶点处理阶段（GPU）</h4>
+<p>处理3D模型的每个顶点：</p>
+<ul>
+  <li><strong>顶点变换</strong>：把顶点从模型空间变换到屏幕空间</li>
+  <li><strong>光照计算</strong>：计算每个顶点的光照</li>
+</ul>
+
+<h4>3. 图元装配阶段</h4>
+<p>把顶点连接成三角形：</p>
+<ul>
+  <li>三个顶点组成一个三角形</li>
+  <li>裁剪掉屏幕外的部分</li>
+</ul>
+
+<h4>4. 光栅化阶段</h4>
+<p>把三角形变成像素：</p>
+<ul>
+  <li>确定三角形覆盖了哪些像素</li>
+  <li>为每个像素插值计算属性</li>
+</ul>
+
+<h4>5. 片元处理阶段</h4>
+<p>计算每个像素的最终颜色：</p>
+<ul>
+  <li>纹理采样</li>
+  <li>光照计算</li>
+  <li>各种特效</li>
+</ul>
+
+<h4>6. 输出合并阶段</h4>
+<p>把结果写入屏幕：</p>
+<ul>
+  <li>深度测试（决定谁在前面）</li>
+  <li>混合（处理透明物体）</li>
+</ul>
+
+<h3>用代码理解流水线</h3>
+
+<pre><code class="language-javascript">// 简化的渲染流水线概念
+function renderPipeline(scene, camera) {
+  // 1. 应用阶段：准备数据
+  const objectsToRender = cullInvisibleObjects(scene, camera);
+  
+  // 2. 对每个物体
+  for (const object of objectsToRender) {
+    // 顶点处理：变换顶点位置
+    const transformedVertices = object.vertices.map(v => 
+      transformVertex(v, object.modelMatrix, camera.viewMatrix, camera.projectionMatrix)
+    );
+    
+    // 3. 图元装配：组成三角形
+    const triangles = assembleTriangles(transformedVertices, object.indices);
+    
+    // 4. 光栅化：三角形变像素
+    for (const triangle of triangles) {
+      const pixels = rasterize(triangle);
+      
+      // 5. 片元处理：计算颜色
+      for (const pixel of pixels) {
+        const color = shadePixel(pixel, object.material, scene.lights);
+        
+        // 6. 输出合并：写入帧缓冲
+        if (passDepthTest(pixel)) {
+          frameBuffer.setPixel(pixel.x, pixel.y, color);
+        }
+      }
+    }
+  }
+}</code></pre>
+
+<h3>为什么要用流水线？</h3>
+
+<p>流水线的好处是<strong>并行处理</strong>：</p>
+
+<ul>
+  <li>当GPU在处理第一个三角形的光栅化时</li>
+  <li>可以同时处理第二个三角形的顶点变换</li>
+  <li>还可以同时处理第三个三角形的片元着色</li>
+</ul>
+
+<p>这样，整体效率大大提高！</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>渲染流水线是把3D场景变成2D图像的一系列处理步骤</li>
+  <li>主要阶段包括：顶点处理、图元装配、光栅化、片元处理、输出合并</li>
+  <li>流水线设计允许并行处理，大大提高渲染效率</li>
+  <li>每一帧画面都要经过完整的流水线处理</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>DC（Draw Call）</strong>——了解CPU是如何告诉GPU"开始画吧"的！</p>

@@ -1,0 +1,89 @@
+<h2>放大镜原理</h2>
+
+<p>小时候，你有没有用放大镜观察过蚂蚁？或者看过鱼眼镜头拍摄的照片？这些"向外扭曲"的效果，在图形学中有着精妙的实现方式。</p>
+
+<h3>🎮 动手试试：放大镜效果</h3>
+
+<p>拖动放大镜移动位置，调节放大强度和半径：</p>
+
+<div class="interactive-demo" id="magnify-demo" data-demo="magnify">
+  <canvas id="magnifyCanvas" width="280" height="180"></canvas>
+  <div class="demo-controls">
+    <div class="control-group">
+      <label>放大强度：<span id="magnifyStrengthValue">0.5</span></label>
+      <input type="range" id="magnifyStrength" min="0.1" max="0.9" step="0.1" value="0.5">
+    </div>
+    <div class="control-group">
+      <label>放大镜半径：<span id="magnifyRadiusValue">60</span></label>
+      <input type="range" id="magnifyRadius" min="30" max="80" value="60">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+<p>💡 <strong>观察要点</strong>：</p>
+<ul>
+  <li>放大镜内的图像被<strong>放大</strong>了，网格线变得更稀疏</li>
+  <li>越靠近中心，放大效果越明显</li>
+  <li>拖动放大镜到不同位置，观察效果变化</li>
+  <li>增大强度，放大效果更明显</li>
+</ul>
+</blockquote>
+
+<h3>放大镜的秘密</h3>
+
+<p>放大镜是一个<strong>凸透镜</strong>，它的特点是：</p>
+
+<ul>
+  <li>中间厚，边缘薄</li>
+  <li>光线穿过时会向中心聚拢</li>
+  <li>近距离观察时，物体看起来被"放大"了</li>
+</ul>
+
+<blockquote>
+<p>放大镜的效果本质上是一种"向外扭曲"——中心区域的图像被拉伸放大，边缘被压缩。</p>
+</blockquote>
+
+<h3>现实中的放大效果</h3>
+
+<p>生活中有很多类似放大镜的效果：</p>
+
+<ul>
+  <li><strong>放大镜</strong>：近距离观察小物体</li>
+  <li><strong>鱼眼镜头</strong>：超广角拍摄，画面边缘弯曲</li>
+  <li><strong>水滴</strong>：透过水滴看东西会被放大</li>
+  <li><strong>玻璃球</strong>：球形玻璃会产生放大和倒像效果</li>
+</ul>
+
+<h3>实现原理</h3>
+
+<p>在图形学中，我们通过<strong>扭曲UV坐标</strong>来实现放大效果：</p>
+
+<ul>
+  <li>计算每个像素到放大镜中心的距离</li>
+  <li>在放大镜范围内，让UV坐标<strong>向中心收缩</strong></li>
+  <li>收缩后的UV采样到更靠近中心的像素，产生放大效果</li>
+  <li>越靠近中心，收缩越大，放大越明显</li>
+</ul>
+
+<h3>放大与缩小的对比</h3>
+
+<p>放大和缩小效果的区别在于扭曲方向：</p>
+
+<ul>
+  <li><strong>放大（凸透镜）</strong>：UV向中心收缩，采样更靠近中心的像素</li>
+  <li><strong>缩小（凹透镜）</strong>：UV向外扩张，采样更远离中心的像素</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>放大镜效果是一种"向外扭曲"，中心被放大，边缘被压缩</li>
+  <li>通过扭曲UV坐标可以在Shader中实现放大效果</li>
+  <li>鱼眼镜头是一种极端的放大效果，整个画面都被扭曲</li>
+  <li>扭曲强度可以用距离和平滑函数来控制</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>缩小镜原理</strong>——与放大相反的"向内扭曲"效果！</p>

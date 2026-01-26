@@ -1,0 +1,93 @@
+<h2>光照模型是什么</h2>
+
+<p>在上一章，我们了解了眼睛如何看世界。但你有没有想过，为什么我们能看出一个球是"圆"的，而不是一个平面的圆形？答案就藏在<strong>光照</strong>里。</p>
+
+<h3>🎮 动手试试：光照模型对比</h3>
+
+<p>点击下面的按钮，切换不同的光照模型，观察同一个球体的变化：</p>
+
+<div class="interactive-demo" id="lighting-demo" data-demo="lighting">
+  <canvas id="lightingCanvas" width="300" height="300"></canvas>
+  <div class="demo-controls">
+    <div class="model-buttons">
+      <button class="lighting-model-btn active" data-model="flat">无光照</button>
+      <button class="lighting-model-btn" data-model="diffuse">漫反射</button>
+      <button class="lighting-model-btn" data-model="phong">Phong高光</button>
+      <button class="lighting-model-btn" data-model="toon">卡通着色</button>
+    </div>
+    <div class="control-group">
+      <label>光源角度：<span id="lightAngleValue">-45</span>°</label>
+      <input type="range" id="lightAngleSlider" min="-180" max="180" value="-45">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+<p>💡 <strong>观察要点</strong>：</p>
+<ul>
+  <li><strong>无光照</strong>：球体看起来像一个平面圆形，完全没有立体感</li>
+  <li><strong>漫反射</strong>：有了明暗变化，球体开始有立体感了</li>
+  <li><strong>Phong高光</strong>：加入了高光反射，看起来像塑料或金属</li>
+  <li><strong>卡通着色</strong>：明暗分成几个色阶，像动画片的效果</li>
+</ul>
+</blockquote>
+
+<h3>没有光照的世界是"平"的</h3>
+
+<p>想象一下，如果一个球体表面每个地方的颜色都完全一样，没有任何明暗变化，你会看到什么？</p>
+
+<p>答案是：<strong>一个平面的圆形！</strong></p>
+
+<blockquote>
+<p>这就像是在纸上画一个纯色的圆，你根本分不清它是一个球还是一个圆片。上面的演示中，点击"无光照"就能看到这个效果。</p>
+</blockquote>
+
+<h3>人脑通过"深浅"感知深度</h3>
+
+<p>我们的大脑非常聪明，它会根据物体表面的<strong>明暗变化</strong>来判断物体的形状和深度。这是人类在漫长进化过程中形成的能力。</p>
+
+<ul>
+  <li><strong>亮的地方</strong>：面向光源，离我们"近"</li>
+  <li><strong>暗的地方</strong>：背向光源，离我们"远"或者是凹进去的</li>
+</ul>
+
+<h3>最黑涂料的神奇效果</h3>
+
+<p>有一种叫做"Vantablack"的超黑涂料，它能吸收99.96%的光线。当你把它涂在一个3D物体上时，神奇的事情发生了：</p>
+
+<p><strong>这个物体看起来就像一个2D的黑色剪影！</strong></p>
+
+<p>因为没有任何光线反射回来，大脑无法获得任何明暗信息，所以完全感知不到物体的立体形状。</p>
+
+<h3>光照模型的作用</h3>
+
+<p>在计算机图形学中，<strong>光照模型</strong>就是用数学公式来模拟光线照射到物体表面后的效果。它告诉计算机：</p>
+
+<ol>
+  <li>物体的哪些部分应该亮一些</li>
+  <li>哪些部分应该暗一些</li>
+  <li>亮和暗的程度分别是多少</li>
+</ol>
+
+<h3>为什么3D游戏需要光照？</h3>
+
+<p>现在你应该明白了，为什么3D游戏和电影都需要精心设计光照：</p>
+
+<ul>
+  <li><strong>没有光照</strong>：所有物体看起来都是平的，像纸片一样</li>
+  <li><strong>有光照</strong>：物体有了明暗变化，大脑能感知到立体感</li>
+  <li><strong>好的光照</strong>：物体看起来真实、有质感、有氛围</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>人脑通过物体表面的明暗变化来感知深度和形状</li>
+  <li>没有光照信息，3D物体看起来就像2D图形</li>
+  <li>光照模型是用数学公式模拟光照效果的方法</li>
+  <li>光照是让计算机图形看起来有立体感的关键</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>凹凸映射</strong>——一种用光照"欺骗"眼睛，让平面看起来凹凸不平的神奇技术！</p>

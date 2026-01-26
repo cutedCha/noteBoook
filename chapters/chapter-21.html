@@ -1,0 +1,159 @@
+<h2>RenderTexture是什么</h2>
+
+<p>想象一下，如果你能把摄像机看到的画面"拍"下来，然后贴到游戏世界里的一面镜子上，或者倒映在水面上……这就是<strong>RenderTexture</strong>的魔力。</p>
+
+<h3>渲染到纹理</h3>
+
+<p>通常，GPU渲染的结果会直接显示在屏幕上。但有时候，我们想把渲染结果保存下来，用于其他用途：</p>
+
+<ul>
+  <li>做一面能照出人影的<strong>镜子</strong></li>
+  <li>做水面的<strong>倒影</strong></li>
+  <li>做监控摄像头的<strong>画面</strong></li>
+  <li>做后处理效果的<strong>中间结果</strong></li>
+</ul>
+
+<blockquote>
+<p>RenderTexture就是"渲染到纹理"——把摄像机的渲染结果存到一张纹理里，而不是直接显示在屏幕上。</p>
+</blockquote>
+
+<h3>RenderTexture的工作原理</h3>
+
+<pre><code class="language-javascript">// RenderTexture的基本使用流程
+function createMirrorEffect() {
+  // 1. 创建一个RenderTexture
+  const renderTexture = createRenderTexture(512, 512);
+  
+  // 2. 创建一个"镜子摄像机"
+  const mirrorCamera = createCamera();
+  // 镜子摄像机的位置是主摄像机的镜像
+  mirrorCamera.position = mirrorPosition(mainCamera.position);
+  
+  // 3. 让镜子摄像机渲染到RenderTexture
+  renderToTexture(mirrorCamera, renderTexture);
+  
+  // 4. 把RenderTexture贴到镜子模型上
+  mirrorMaterial.texture = renderTexture;
+}</code></pre>
+
+<h3>实现镜子效果</h3>
+
+<p>镜子的关键是计算<strong>镜像摄像机</strong>的位置：</p>
+
+<pre><code class="language-javascript">// 计算镜像位置
+function getMirrorCameraPosition(camera, mirrorPlane) {
+  // 镜面的法线
+  const normal = mirrorPlane.normal;
+  
+  // 摄像机到镜面的距离
+  const distance = dotProduct(
+    subtract(camera.position, mirrorPlane.point),
+    normal
+  );
+  
+  // 镜像位置 = 原位置 - 2 * 距离 * 法线
+  return subtract(
+    camera.position,
+    scale(normal, 2 * distance)
+  );
+}</code></pre>
+
+<h3>实现水面倒影</h3>
+
+<p>水面倒影的原理类似镜子，但需要额外处理：</p>
+
+<pre><code class="language-glsl">// 水面倒影着色器
+precision mediump float;
+
+uniform sampler2D u_ReflectionTexture;  // 倒影纹理
+uniform sampler2D u_RefractionTexture;  // 折射纹理
+uniform float u_Time;
+
+varying vec2 v_TexCoord;
+
+void main() {
+  vec2 uv = v_TexCoord;
+  
+  // 用噪声扰动UV，模拟水波
+  float wave = sin(uv.x * 20.0 + u_Time) * 0.01;
+  wave += sin(uv.y * 15.0 + u_Time * 0.8) * 0.01;
+  
+  // 采样倒影和折射
+  vec4 reflection = texture2D(u_ReflectionTexture, uv + wave);
+  vec4 refraction = texture2D(u_RefractionTexture, uv + wave * 0.5);
+  
+  // 菲涅尔效果：视角越平，反射越强
+  float fresnel = 0.5;  // 简化版本
+  
+  gl_FragColor = mix(refraction, reflection, fresnel);
+}</code></pre>
+
+<h3>监控摄像头效果</h3>
+
+<p>游戏中的监控画面也是用RenderTexture实现的：</p>
+
+<pre><code class="language-javascript">// 监控摄像头系统
+class SecurityCamera {
+  constructor(position, rotation) {
+    // 创建摄像机
+    this.camera = createCamera();
+    this.camera.position = position;
+    this.camera.rotation = rotation;
+    this.camera.fov = 60;
+    
+    // 创建RenderTexture
+    this.renderTexture = createRenderTexture(256, 256);
+  }
+  
+  update() {
+    // 渲染到纹理
+    renderToTexture(this.camera, this.renderTexture);
+  }
+  
+  getTexture() {
+    return this.renderTexture;
+  }
+}</code></pre>
+
+<h3>后处理效果链</h3>
+
+<p>RenderTexture是实现后处理效果的基础：</p>
+
+<pre><code class="language-javascript">// 后处理效果链
+function postProcessing(scene) {
+  // 1. 渲染场景到纹理A
+  const textureA = renderToTexture(scene);
+  
+  // 2. 对纹理A应用Bloom，输出到纹理B
+  const textureB = applyBloom(textureA);
+  
+  // 3. 对纹理B应用色调映射，输出到纹理C
+  const textureC = applyToneMapping(textureB);
+  
+  // 4. 对纹理C应用抗锯齿，输出到屏幕
+  applyFXAA(textureC, screen);
+}</code></pre>
+
+<h3>RenderTexture的性能考虑</h3>
+
+<p>使用RenderTexture需要注意性能：</p>
+
+<ul>
+  <li><strong>分辨率</strong>：不需要和屏幕一样大，镜子用512×512通常够了</li>
+  <li><strong>更新频率</strong>：不需要每帧更新，可以隔几帧更新一次</li>
+  <li><strong>渲染内容</strong>：可以简化镜子中的场景，减少细节</li>
+  <li><strong>数量限制</strong>：每个RenderTexture都需要额外的渲染，不要太多</li>
+</ul>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>RenderTexture可以把摄像机的渲染结果保存为纹理</li>
+  <li>镜子效果需要计算镜像摄像机的位置</li>
+  <li>水面倒影结合了反射、折射和波浪扰动</li>
+  <li>后处理效果链依赖RenderTexture在多个步骤间传递结果</li>
+</ol>
+
+<p>恭喜你完成了<strong>效果原理篇</strong>的学习！在接下来的<strong>进阶概念篇</strong>中，我们将探索更深入的图形学知识！</p>

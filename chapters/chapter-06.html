@@ -1,0 +1,105 @@
+<h2>DC是什么</h2>
+
+<p>在游戏开发中，你可能经常听到"这个场景DC太多了，需要优化"。那么DC到底是什么？为什么它这么重要？</p>
+
+<h3>DC = Draw Call</h3>
+
+<p><strong>DC</strong>是<strong>Draw Call</strong>的缩写，中文可以叫"绘制调用"。简单来说，它就是CPU对GPU说的一句话：</p>
+
+<blockquote>
+<p>"嘿，GPU！用这个材质，画这些三角形！"</p>
+</blockquote>
+
+<h3>一个生活中的比喻</h3>
+
+<p>想象你是一个餐厅的服务员（CPU），厨房是GPU：</p>
+
+<ul>
+  <li><strong>一个DC</strong>就像是你对厨房喊一次"出菜！"</li>
+  <li>每次喊"出菜"，厨房就会做一批菜</li>
+  <li>喊的次数越多，你就越累（CPU开销）</li>
+  <li>但厨房一次能做很多菜（GPU很强大）</li>
+</ul>
+
+<p>所以，<strong>减少喊的次数，每次让厨房多做一些</strong>，整体效率会更高。</p>
+
+<h3>Draw Call的本质</h3>
+
+<p>在底层，一个Draw Call通常对应一个图形API的绘制命令：</p>
+
+<pre><code class="language-javascript">// WebGL中的Draw Call示例
+function drawObject(gl, object) {
+  // 1. 设置要使用的着色器程序
+  gl.useProgram(object.shaderProgram);
+  
+  // 2. 绑定顶点数据
+  gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
+  
+  // 3. 绑定纹理
+  gl.bindTexture(gl.TEXTURE_2D, object.texture);
+  
+  // 4. 设置各种状态...
+  
+  // 5. 发出Draw Call！
+  // 这一行就是一个DC
+  gl.drawElements(
+    gl.TRIANGLES,           // 画三角形
+    object.indexCount,      // 画多少个顶点
+    gl.UNSIGNED_SHORT,      // 索引类型
+    0                       // 从哪里开始
+  );
+}
+
+// 每调用一次drawObject，就产生一个DC</code></pre>
+
+<h3>为什么DC多了会卡？</h3>
+
+<p>每次Draw Call，CPU都需要做很多工作：</p>
+
+<ol>
+  <li><strong>验证状态</strong>：检查当前设置是否正确</li>
+  <li><strong>准备数据</strong>：把命令打包发给GPU</li>
+  <li><strong>等待GPU</strong>：确保GPU准备好接收</li>
+  <li><strong>切换上下文</strong>：如果材质变了，还要切换各种状态</li>
+</ol>
+
+<p>这些工作虽然每次都很快，但<strong>积少成多</strong>。如果一帧有1000个DC，CPU可能就忙不过来了。</p>
+
+<blockquote>
+<p>GPU就像一个超级厨师，一次能做1000道菜。但如果你每道菜都单独下单，光是下单的时间就把你累死了。</p>
+</blockquote>
+
+<h3>DC的数量级</h3>
+
+<p>一般来说：</p>
+
+<ul>
+  <li><strong>手机游戏</strong>：尽量控制在100-200个DC以内</li>
+  <li><strong>PC游戏</strong>：可以承受1000-3000个DC</li>
+  <li><strong>主机游戏</strong>：优化好的话可以更多</li>
+</ul>
+
+<h3>如何减少DC？</h3>
+
+<p>常见的优化方法：</p>
+
+<ul>
+  <li><strong>合批（Batching）</strong>：把多个物体合并成一个DC</li>
+  <li><strong>图集（Atlas）</strong>：把多张小图合并成一张大图</li>
+  <li><strong>实例化（Instancing）</strong>：一次画很多相同的物体</li>
+</ul>
+
+<p>我们会在后面的章节详细讲解这些技术。</p>
+
+<h3>小结</h3>
+
+<p>在这一章中，我们学到了：</p>
+
+<ol>
+  <li>DC（Draw Call）是CPU告诉GPU"画东西"的命令</li>
+  <li>每个DC都有CPU开销，DC太多会导致性能问题</li>
+  <li>GPU很强大，但CPU发命令的速度有限</li>
+  <li>优化DC数量是游戏性能优化的重要手段</li>
+</ol>
+
+<p>在下一章，我们将学习<strong>渲染一张图的完整流程</strong>——用一个简化的例子，把前面学的知识串起来！</p>
