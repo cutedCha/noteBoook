@@ -970,9 +970,15 @@ function cacheElements() {
  * 绑定事件监听器
  */
 function bindEvents() {
+  console.log('bindEvents 被调用');
+  console.log('Elements.enterBtn:', Elements.enterBtn);
+  
   // 封面进入按钮点击事件
   if (Elements.enterBtn) {
+    console.log('绑定 enterBtn 点击事件');
     Elements.enterBtn.addEventListener('click', handleEnterClick);
+  } else {
+    console.error('Elements.enterBtn 不存在！');
   }
   
   // 目录关闭按钮点击事件
@@ -1005,9 +1011,16 @@ function bindContinueReadingEvents() {
  * 处理封面"开始阅读"按钮点击
  */
 function handleEnterClick() {
-  if (AppState.isAnimating) return;
+  console.log('handleEnterClick 被调用');
+  console.log('AppState.isAnimating:', AppState.isAnimating);
+  
+  if (AppState.isAnimating) {
+    console.log('动画中，跳过');
+    return;
+  }
   
   // 切换到目录视图
+  console.log('调用 showTableOfContents');
   showTableOfContents();
 }
 
@@ -1190,16 +1203,22 @@ function showCover() {
  * 显示目录
  */
 function showTableOfContents() {
+  console.log('showTableOfContents 被调用');
   AppState.currentView = 'toc';
   
   // 隐藏封面，显示目录
   if (Elements.cover) {
+    console.log('隐藏封面');
     Elements.cover.classList.add('hidden');
   }
   if (Elements.toc) {
+    console.log('显示目录, Elements.toc:', Elements.toc);
     Elements.toc.classList.remove('hidden');
     // 渲染目录内容（如果尚未渲染）
+    console.log('准备调用 renderTableOfContents');
     renderTableOfContents();
+  } else {
+    console.error('Elements.toc 不存在！');
   }
   if (Elements.content) {
     Elements.content.classList.add('hidden');
@@ -1213,18 +1232,34 @@ function showTableOfContents() {
  * 渲染目录内容
  */
 function renderTableOfContents() {
-  const tocContent = document.querySelector('.toc-content');
-  if (!tocContent || tocContent.children.length > 0) {
-    // 目录已渲染，只需更新已读状态
-    updateTocReadMarkers();
+  console.log('=== renderTableOfContents 开始 ===');
+  
+  // 使用 ID 选择器确保找到正确的元素
+  const tocContent = document.getElementById('toc-content-container') || document.querySelector('.toc-content');
+  
+  console.log('tocContent 元素:', tocContent);
+  
+  if (!tocContent) {
+    console.error('目录容器未找到！');
     return;
   }
   
+  console.log('当前 children.length:', tocContent.children.length);
+  console.log('当前 innerHTML:', tocContent.innerHTML.substring(0, 100));
+  
   // 检查是否有 CHAPTERS_DATA（由 navigation.js 提供）
+  console.log('CHAPTERS_DATA 是否存在:', typeof CHAPTERS_DATA !== 'undefined');
+  
   if (typeof CHAPTERS_DATA === 'undefined') {
-    console.warn('CHAPTERS_DATA 未定义，目录无法渲染');
+    console.error('CHAPTERS_DATA 未定义！');
+    tocContent.innerHTML = '<p style="padding: 20px; color: red; font-size: 18px;">错误：目录数据未加载</p>';
     return;
   }
+  
+  console.log('CHAPTERS_DATA.length:', CHAPTERS_DATA.length);
+  
+  // 清空并重新生成
+  tocContent.innerHTML = '';
   
   // 按分类组织章节
   const sections = {};
@@ -1241,7 +1276,8 @@ function renderTableOfContents() {
     '效果原理篇',
     '进阶概念篇',
     '数学篇',
-    '哲学彩蛋篇'
+    '哲学彩蛋篇',
+    '附录'
   ];
   
   // 渲染各分类
@@ -1298,6 +1334,10 @@ function renderTableOfContents() {
     sectionEl.appendChild(listEl);
     tocContent.appendChild(sectionEl);
   });
+  
+  console.log('=== renderTableOfContents 完成 ===');
+  console.log('最终 children.length:', tocContent.children.length);
+  console.log('最终 innerHTML 长度:', tocContent.innerHTML.length);
 }
 
 /**
@@ -1338,6 +1378,10 @@ function updateTocReadMarkers() {
  * Requirements: 8.5
  */
 function hideLoading() {
+  console.log('hideLoading 被调用');
+  console.log('Elements.loading:', Elements.loading);
+  console.log('Elements.app:', Elements.app);
+  
   if (Elements.loading) {
     // 先完成进度条动画
     const progressBar = Elements.loading.querySelector('.loading-progress-bar');
@@ -1356,10 +1400,17 @@ function hideLoading() {
         Elements.loading.classList.add('hidden');
         // 触发内容显示动画
         if (Elements.app) {
+          console.log('添加 content-ready 类');
           Elements.app.classList.add('content-ready');
         }
       }, 800); // 与CSS过渡时间匹配
     }, 300);
+  } else {
+    // 如果没有 loading 元素，直接显示内容
+    console.log('没有 loading 元素，直接显示内容');
+    if (Elements.app) {
+      Elements.app.classList.add('content-ready');
+    }
   }
 }
 

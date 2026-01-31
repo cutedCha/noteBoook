@@ -45,7 +45,10 @@ const CHAPTERS_DATA = [
   
   // 哲学彩蛋篇 (第30-31章)
   { number: 30, title: "蝙蝠的图形学", subtitle: "如果蝙蝠有文明，超声波学？", section: "哲学彩蛋篇" },
-  { number: 31, title: "一生二，二生三，三生万物", subtitle: "效果叠加的哲学，复杂皆由简单构成", section: "哲学彩蛋篇" }
+  { number: 31, title: "一生二，二生三，三生万物", subtitle: "效果叠加的哲学，复杂皆由简单构成", section: "哲学彩蛋篇" },
+  
+  // 附录
+  { number: 32, title: "推荐书籍", subtitle: "继续深入图形学的学习资源", section: "附录" }
 ];
 
 // 分类顺序
@@ -54,7 +57,8 @@ const SECTION_ORDER = [
   '效果原理篇',
   '进阶概念篇',
   '数学篇',
-  '哲学彩蛋篇'
+  '哲学彩蛋篇',
+  '附录'
 ];
 
 // 导航系统
@@ -102,7 +106,7 @@ const NavigationSystem = {
    */
   goToChapter: function(chapterNumber) {
     // 验证章节编号
-    if (chapterNumber < 1 || chapterNumber > 31) {
+    if (chapterNumber < 1 || chapterNumber > 32) {
       console.warn(`无效的章节编号: ${chapterNumber}`);
       return;
     }
@@ -153,7 +157,7 @@ const NavigationSystem = {
     if (!this.currentChapter) return;
     
     const nextNumber = this.currentChapter.number + 1;
-    if (nextNumber <= 31) {
+    if (nextNumber <= 32) {
       this.goToChapter(nextNumber);
     }
   },
@@ -245,7 +249,7 @@ const NavigationSystem = {
     
     // 最后一章禁用下一章按钮
     if (nextBtn) {
-      nextBtn.disabled = this.currentChapter.number >= 31;
+      nextBtn.disabled = this.currentChapter.number >= 32;
     }
   }
 };

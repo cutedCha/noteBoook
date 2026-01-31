@@ -1,671 +1,349 @@
 /**
  * responsive.css - 响应式布局样式
- * 定义响应式断点和移动端适配
- * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
+ * 所有屏幕尺寸都使用全屏单页模式
  */
 
 /* ========================================
-   响应式断点定义
-   主断点: 768px (移动端/桌面端切换)
+   覆盖全局CSS变量 - 强制全屏
    ======================================== */
 
-/* 
- * 断点说明:
- * - 小于 768px: 移动端 (单页视图)
- * - 768px 及以上: 桌面端 (双页视图)
- * 
- * 辅助断点:
- * - 480px: 小屏手机
- * - 1024px: 平板横屏/小桌面
- * - 1200px: 大桌面
- * 
- * Property 6: 响应式视图模式切换
- * For any 屏幕宽度W，当W < 768px时系统应显示单页视图模式，
- * 当W ≥ 768px时系统应显示双页视图模式。
- * Validates: Requirements 5.1, 5.2
- */
+:root {
+  --book-width: 100vw !important;
+  --book-height: 100vh !important;
+}
 
 /* ========================================
-   视图模式基础样式 (通过 data-view-mode 属性控制)
-   Requirements: 5.1, 5.2
+   HTML/Body 全屏基础
    ======================================== */
 
-/* 单页视图模式 - 通过 JS 设置的 data-view-mode 属性 */
-body[data-view-mode="single"] .page-left {
+html, body {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+body {
+  overflow-y: auto !important;
+}
+
+/* ========================================
+   全局全屏单页模式
+   ======================================== */
+
+/* 隐藏左页，只显示右页 */
+.page-left {
+  display: none !important;
+  width: 0 !important;
+  flex: 0 !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+.page-right {
+  flex: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-left: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* 应用容器全屏 */
+.app-container {
+  padding: 0 !important;
+  min-height: 100vh !important;
+  width: 100vw !important;
+  box-sizing: border-box;
+  display: block !important;
+  background: var(--color-paper) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* 书籍容器全屏 */
+.book-container {
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  perspective: none !important;
+  transform-style: flat !important;
+}
+
+/* 内容页全屏 */
+.book-content {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* 确保 hidden 类能正确隐藏内容页 */
+.book-content.hidden {
   display: none !important;
 }
 
-body[data-view-mode="single"] .page-right {
-  flex: 1;
-  border-left: none;
+/* 目录全屏 */
+.book-toc {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  z-index: var(--z-modal);
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: var(--color-paper) !important;
+  overflow: hidden !important;
 }
 
-/* 双页视图模式 */
-body[data-view-mode="double"] .page-left,
-body[data-view-mode="double"] .page-right {
-  display: block;
+/* 确保 hidden 类能正确隐藏目录 */
+.book-toc.hidden {
+  display: none !important;
+}
+
+.toc-header {
+  flex-shrink: 0;
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.toc-content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  /* 和 toc-header 使用完全相同的左右内边距 */
+  padding-left: var(--spacing-xl) !important;
+  padding-right: var(--spacing-xl) !important;
+  padding-top: var(--spacing-lg);
+  padding-bottom: 20px;
+  min-height: 0 !important;
+  width: 100%;
+  height: auto !important;
+  max-height: none !important;
+  box-sizing: border-box;
+}
+
+/* 目录分类区块 - 完全移除额外边距 */
+.toc-section {
+  margin: 0 0 var(--spacing-xl) 0 !important;
+  padding: 0 !important;
+}
+
+/* 目录分类标题 */
+.toc-section-title {
+  margin: 0 0 var(--spacing-md) 0 !important;
+  padding: 0 !important;
+}
+
+/* 章节列表 - 完全移除列表缩进 */
+.toc-chapter-list {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+/* 章节项 */
+.toc-chapter-item {
+  margin: 0 0 var(--spacing-sm) 0 !important;
+  padding: 0 !important;
+}
+
+/* 章节链接 */
+.toc-chapter-link {
+  padding: var(--spacing-sm) 0 !important;
+  margin: 0 !important;
+}
+
+/* 封面全屏 */
+.book-cover {
+  width: 100vw !important;
+  height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 100 !important;
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.book-cover.hidden {
+  display: none !important;
+}
+
+.cover-front {
+  border-radius: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.cover-spine {
+  display: none !important;
+}
+
+/* 页面内部布局 */
+.page-inner {
+  padding: var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-lg) + 70px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 内容区域滚动 */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 隐藏书页边缘装饰 */
+.page-edge {
+  display: none;
 }
 
 /* ========================================
-   桌面端样式 (默认 - 双页视图)
-   Requirements: 5.2
+   导航栏 - 固定在底部
    ======================================== */
 
-/* 双页视图布局 */
-.book-content {
-  display: flex;
+.book-navigation {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  background-color: var(--color-paper);
+  border-top: 1px solid var(--border-color-light);
+  box-shadow: 0 -2px 10px var(--color-shadow-light);
+  z-index: var(--z-sticky);
+  pointer-events: auto;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-md);
 }
 
+/* 确保 hidden 类能正确隐藏导航栏 */
+.book-navigation.hidden {
+  display: none !important;
+}
+
+.nav-btn {
+  position: static !important;
+  transform: none !important;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: var(--radius-sm);
+}
+
+.nav-prev,
+.nav-next {
+  position: static !important;
+}
+
+.nav-icon {
+  font-size: var(--font-size-xl);
+}
+
+.nav-info {
+  position: static !important;
+  transform: none !important;
+  flex-direction: row;
+  gap: var(--spacing-sm);
+}
+
+.nav-toc-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.nav-chapter {
+  font-size: var(--font-size-sm);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========================================
+   简化装饰元素
+   ======================================== */
+
+/* 隐藏书页纹理效果 */
+.page::before,
+.page::after {
+  display: none !important;
+}
+
+/* 隐藏书页弯曲效果 */
+.page-curl,
+.page-curl::before,
+.page-curl::after {
+  display: none !important;
+}
+
+/* 简化书页阴影 */
+.page,
 .page-left,
 .page-right {
-  display: block;
+  box-shadow: none !important;
 }
 
-/* ========================================
-   平板横屏 / 小桌面 (1024px 以下)
-   ======================================== */
-
-@media screen and (max-width: 1024px) {
-  :root {
-    --book-width: 800px;
-    --book-height: 550px;
-    --padding-page: 2rem;
-  }
-  
-  .cover-title {
-    font-size: var(--font-size-3xl);
-  }
-  
-  .nav-prev {
-    left: -50px;
-  }
-  
-  .nav-next {
-    right: -50px;
-  }
+/* 禁用复杂的3D变换 */
+.book-container {
+  perspective: none;
+  transform-style: flat;
 }
 
-/* ========================================
-   移动端样式 (768px 以下 - 单页视图)
-   Requirements: 5.1, 5.2, 5.3, 5.6
-   - 5.1: 屏幕宽度小于768px时切换为单页视图模式
-   - 5.2: 屏幕宽度大于等于768px时显示双页书籍视图
-   - 5.3: 根据屏幕尺寸自动调整字体大小
-   - 5.6: 在移动端隐藏不必要的装饰元素以优化性能
-   ======================================== */
+/* 禁用翻页动画 */
+.page-flip-container {
+  display: none !important;
+}
 
-@media screen and (max-width: 767px) {
-  /* CSS 变量覆盖 - 移动端适配 */
-  :root {
-    --book-width: 100%;
-    --book-height: auto;
-    --padding-page: 1.5rem;
-    --margin-page: 1rem;
-    
-    /* 字体缩放 - Requirement 5.3 */
-    --font-size-base: 0.9375rem;    /* 15px */
-    --font-size-md: 1rem;            /* 16px */
-    --font-size-lg: 1.125rem;        /* 18px */
-    --font-size-xl: 1.25rem;         /* 20px */
-    --font-size-2xl: 1.5rem;         /* 24px */
-    --font-size-3xl: 1.875rem;       /* 30px */
-    --font-size-4xl: 2.25rem;        /* 36px */
-    
-    /* 移动端性能优化 - 简化动画时长 */
-    --transition-page-flip: 0.3s;
-  }
-  
-  /* 应用容器 */
-  .app-container {
-    padding: var(--spacing-md);
-    min-height: 100vh;
-    align-items: flex-start;
-  }
-  
-  /* 书籍容器 */
-  .book-container {
-    width: 100%;
-    max-width: 100%;
-  }
-  
-  /* ========================================
-     封面 - 移动端
-     ======================================== */
-  
-  .book-cover {
-    height: auto;
-    min-height: 100vh;
-    flex-direction: column;
-  }
-  
-  /* 隐藏书脊装饰 - Requirement 5.6 */
-  .cover-spine {
-    display: none;
-  }
-  
-  /* ========================================
-     移动端装饰元素隐藏 - Requirement 5.6
-     隐藏不必要的装饰元素以优化性能
-     ======================================== */
-  
-  /* 隐藏书页纹理效果 - 减少渲染层 */
-  .page::before,
-  .page::after {
-    display: none !important;
-  }
-  
-  /* 隐藏书页弯曲效果 */
-  .page-curl,
-  .page-curl::before,
-  .page-curl::after {
-    display: none !important;
-  }
-  
-  /* 简化书页阴影 - 减少复杂box-shadow */
-  .page,
-  .page-left,
-  .page-right {
-    box-shadow: none !important;
-  }
-  
-  /* 隐藏封面纹理效果 */
-  .cover-front::before {
-    display: none;
-  }
-  
-  /* 简化封面边框装饰 */
-  .cover-front::after {
-    border-width: 1px;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-  }
-  
-  /* 隐藏章节标题装饰线 */
-  .chapter-header::after {
-    display: none;
-  }
-  
-  /* 简化小节标题装饰 */
-  .chapter-section-title::before,
-  .chapter-body h2::before,
-  .chapter-body h3::before,
-  .chapter-body h4::before {
-    width: 3px;
-    height: 60%;
-  }
-  
-  /* 简化分隔线装饰 */
-  .chapter-body hr::after {
-    display: none;
-  }
-  
-  .cover-front {
-    border-radius: var(--radius-md);
-    min-height: 100vh;
-  }
-  
-  .cover-front::after {
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    bottom: 15px;
-  }
-  
-  .cover-content {
-    padding: var(--spacing-xl);
-  }
-  
-  .cover-title {
-    font-size: var(--font-size-3xl);
-  }
-  
-  .cover-subtitle {
-    font-size: var(--font-size-base);
-  }
-  
-  .cover-enter-btn {
-    padding: var(--spacing-md) var(--spacing-xl);
-    font-size: var(--font-size-base);
-    width: 100%;
-    max-width: 200px;
-  }
-  
-  /* ========================================
-     目录 - 移动端
-     ======================================== */
-  
-  .book-toc {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    z-index: var(--z-modal);
-  }
-  
-  .toc-header {
-    padding: var(--spacing-md);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  
-  .toc-header h2 {
-    font-size: var(--font-size-xl);
-  }
-  
-  .toc-content {
-    padding: var(--spacing-md);
-  }
-  
-  .toc-section {
-    margin-bottom: var(--spacing-lg);
-  }
-  
-  .toc-section-title {
-    font-size: var(--font-size-md);
-  }
-  
-  .toc-chapter-link {
-    padding: var(--spacing-md);
-    min-height: var(--touch-target-min);
-    flex-wrap: wrap;
-  }
-  
-  .toc-chapter-subtitle {
-    width: 100%;
-    margin-left: 50px;
-    margin-top: var(--spacing-xs);
-  }
-  
-  /* ========================================
-     内容页 - 移动端 (单页视图)
-     Requirement 5.1: 屏幕宽度小于768px时切换为单页视图模式
-     ======================================== */
-  
-  .book-content {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-  /* 单页视图 - 隐藏左页 (Requirement 5.1) */
-  .page-left {
-    display: none !important;
-  }
-  
-  .page-right {
-    flex: 1;
-    border-left: none;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-  .page-inner {
-    padding: var(--spacing-lg);
-    padding-bottom: calc(var(--spacing-lg) + 60px); /* 为底部导航留空间 */
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-  /* 移动端内容区域滚动 */
-  .page-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* 隐藏书页边缘装饰 - Requirement 5.6 */
-  .page-edge {
-    display: none;
-  }
-  
-  /* ========================================
-     移动端性能优化 - Requirement 5.6
-     ======================================== */
-  
-  /* 禁用复杂的3D变换 */
-  .book-container {
-    perspective: none;
-    transform-style: flat;
-  }
-  
-  /* 简化书籍容器阴影 */
-  .book-content {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* 简化目录阴影 */
-  .book-toc {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* 简化封面阴影 */
-  .cover-front {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  }
-  
-  /* 简化图片悬停效果 - 移动端不需要 */
-  .chapter-image:hover {
-    transform: none;
-    box-shadow: 0 4px 16px var(--color-shadow);
-  }
-  
-  /* 简化代码块样式 */
-  .code-block {
-    border-radius: var(--radius-sm);
-  }
-  
-  /* 使用GPU加速的属性进行动画 */
-  .page-slide-left,
-  .page-slide-right,
-  .page-slide-in-left,
-  .page-slide-in-right {
-    will-change: transform, opacity;
-  }
-  
-  /* 章节标题 */
-  .chapter-header {
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-md);
-  }
-  
-  .chapter-title {
-    font-size: var(--font-size-xl);
-  }
-  
-  .chapter-subtitle {
-    font-size: var(--font-size-base);
-  }
-  
-  /* ========================================
-     导航 - 移动端
-     ======================================== */
-  
-  .book-navigation {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    background-color: var(--color-paper);
-    border-top: 1px solid var(--border-color-light);
-    box-shadow: 0 -2px 10px var(--color-shadow-light);
-    z-index: var(--z-sticky);
-    pointer-events: auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-  
-  .nav-btn {
-    position: static;
-    transform: none;
-    width: var(--touch-target-min);
-    height: var(--touch-target-min);
-    border-radius: var(--radius-sm);
-  }
-  
-  .nav-prev,
-  .nav-next {
-    position: static;
-  }
-  
-  .nav-icon {
-    font-size: var(--font-size-xl);
-  }
-  
-  .nav-info {
-    position: static;
-    transform: none;
-    flex-direction: row;
-    gap: var(--spacing-sm);
-  }
-  
-  .nav-toc-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-  
-  .nav-chapter {
-    font-size: var(--font-size-xs);
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  /* ========================================
-     翻页动画 - 移动端简化
-     Requirement 5.6: 优化移动端性能
-     ======================================== */
-  
-  /* 移动端使用简化的滑动动画 - 禁用3D翻页效果 */
-  .page-flip-container {
-    display: none !important;
-  }
-  
-  /* 禁用翻页时的复杂动画 */
-  .flip-to-left,
-  .flip-to-right {
-    animation: none !important;
-  }
-  
-  /* 禁用页面弯曲动画 */
-  .page-flipping,
-  .page-flipping-front,
-  .page-flipping-back,
-  .page-flipping .page-curl {
-    display: none !important;
-  }
-  
-  /* 移动端页面切换动画 */
-  .page-slide-left {
-    animation: slideLeft 0.3s ease forwards;
-  }
-  
-  .page-slide-right {
-    animation: slideRight 0.3s ease forwards;
-  }
-  
-  @keyframes slideLeft {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(-30px);
-      opacity: 0;
-    }
-  }
-  
-  @keyframes slideRight {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(30px);
-      opacity: 0;
-    }
-  }
-  
-  .page-slide-in-left {
-    animation: slideInLeft 0.3s ease forwards;
-  }
-  
-  .page-slide-in-right {
-    animation: slideInRight 0.3s ease forwards;
-  }
-  
-  @keyframes slideInLeft {
-    from {
-      transform: translateX(30px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideInRight {
-    from {
-      transform: translateX(-30px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  /* ========================================
-     弹窗 - 移动端
-     ======================================== */
-  
-  .continue-reading-modal .modal-content {
-    margin: var(--spacing-md);
-    padding: var(--spacing-xl);
-    max-width: calc(100% - 2 * var(--spacing-md));
-  }
-  
-  .modal-buttons {
-    flex-direction: column;
-  }
-  
-  .modal-btn {
-    width: 100%;
-  }
-  
-  /* ========================================
-     加载动画 - 移动端简化
-     Requirement 5.6, 8.5: 优化移动端性能
-     ======================================== */
-  
-  /* 缩小加载书籍尺寸 */
-  .loading-book {
-    width: 80px;
-    height: 110px;
-  }
-  
-  .loading-book-spine {
-    width: 14px;
-  }
-  
-  .loading-book-title {
-    font-size: var(--font-size-xs);
-  }
-  
-  .loading-text {
-    font-size: var(--font-size-base);
-  }
-  
-  .loading-progress {
-    width: 150px;
-  }
-  
-  /* 简化加载动画 - 减少动画复杂度 */
-  .loading-page {
-    animation-duration: 2s;
-  }
-  
-  /* 简化书籍浮动动画 */
-  .loading-book {
-    animation-duration: 2s;
-  }
-  
-  /* 隐藏书页堆叠效果 - 减少渲染层 */
-  .loading-book-pages-stack {
-    display: none;
-  }
-  
-  /* 简化封面装饰 */
-  .loading-book-cover::before {
-    display: none;
-  }
-  
-  /* ========================================
-     移动端额外性能优化 - Requirement 5.6
-     ======================================== */
-  
-  /* 禁用不必要的过渡效果 */
-  .toc-chapter-link,
-  .cover-enter-btn,
-  .nav-btn {
-    transition: background-color 0.15s ease, opacity 0.15s ease;
-  }
-  
-  /* 简化按钮悬停效果 */
-  .cover-enter-btn:hover,
-  .nav-btn:hover:not(:disabled) {
-    transform: none;
-  }
-  
-  /* 优化滚动性能 */
-  .toc-content,
-  .page-content {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* 减少重绘区域 */
-  .book-content,
-  .book-toc,
-  .book-cover {
-    contain: layout style paint;
-  }
+.flip-to-left,
+.flip-to-right {
+  animation: none !important;
 }
 
 /* ========================================
    小屏手机 (480px 以下)
-   Requirement 5.3: 根据屏幕尺寸自动调整字体大小
    ======================================== */
 
 @media screen and (max-width: 480px) {
   :root {
-    /* 进一步缩小字体以适应小屏幕 - Requirement 5.3 */
-    --font-size-base: 0.875rem;      /* 14px */
-    --font-size-md: 0.9375rem;       /* 15px */
-    --font-size-lg: 1rem;            /* 16px */
-    --font-size-xl: 1.125rem;        /* 18px */
-    --font-size-2xl: 1.25rem;        /* 20px */
-    --font-size-3xl: 1.5rem;         /* 24px */
-    --font-size-4xl: 1.875rem;       /* 30px */
-    
+    --font-size-base: 0.875rem;
+    --font-size-md: 0.9375rem;
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.125rem;
+    --font-size-2xl: 1.25rem;
+    --font-size-3xl: 1.5rem;
+    --font-size-4xl: 1.875rem;
     --padding-page: 1rem;
-    --spacing-lg: 1rem;
-    --spacing-xl: 1.5rem;
   }
   
   .cover-title {
     font-size: var(--font-size-2xl);
-  }
-  
-  .cover-subtitle {
-    font-size: var(--font-size-sm);
-  }
-  
-  .cover-decoration {
-    width: 80px;
-  }
-  
-  .toc-chapter-number {
-    min-width: 40px;
   }
   
   .chapter-title {
@@ -678,43 +356,165 @@ body[data-view-mode="double"] .page-right {
 }
 
 /* ========================================
-   大桌面 (1200px 以上)
-   Requirement 5.2: 屏幕宽度大于等于768px时显示双页书籍视图
+   中等屏幕 (481px - 1199px)
+   ======================================== */
+
+@media screen and (min-width: 481px) and (max-width: 1199px) {
+  :root {
+    --font-size-base: 1rem;
+    --font-size-md: 1.125rem;
+    --font-size-lg: 1.25rem;
+    --padding-page: 1.5rem;
+  }
+  
+  .page-inner {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    padding-bottom: calc(var(--spacing-lg) + 70px);
+  }
+  
+  .page-content {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  .toc-content {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  .cover-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .chapter-title {
+    font-size: var(--font-size-xl);
+  }
+  
+  .nav-chapter {
+    max-width: 250px;
+  }
+}
+
+/* ========================================
+   大屏幕 (1200px 以上)
    ======================================== */
 
 @media screen and (min-width: 1200px) {
   :root {
-    --book-width: 1000px;
-    --book-height: 650px;
-    --padding-page: 3rem;
+    --font-size-base: 1.0625rem;
+    --font-size-md: 1.1875rem;
+    --font-size-lg: 1.375rem;
+    --padding-page: 2rem;
+  }
+  
+  .page-inner {
+    padding: var(--spacing-xl) var(--spacing-3xl);
+    padding-bottom: calc(var(--spacing-xl) + 70px);
+  }
+  
+  .page-content {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  .toc-content {
+    max-width: 800px;
+    margin: 0 auto;
   }
   
   .cover-title {
-    font-size: calc(var(--font-size-4xl) * 1.1);
+    font-size: calc(var(--font-size-4xl) * 1.2);
   }
   
-  .nav-prev {
-    left: -70px;
+  .cover-subtitle {
+    font-size: var(--font-size-lg);
   }
   
-  .nav-next {
-    right: -70px;
+  .chapter-title {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .toc-header h2 {
+    font-size: calc(var(--font-size-2xl) * 1.1);
+  }
+  
+  .toc-chapter-title {
+    font-size: var(--font-size-md);
+  }
+  
+  .toc-section-title {
+    font-size: var(--font-size-lg);
+  }
+  
+  .nav-btn {
+    width: 60px;
+    height: 50px;
+  }
+  
+  .nav-chapter {
+    font-size: var(--font-size-base);
+    max-width: 400px;
+  }
+  
+  .book-navigation {
+    padding: var(--spacing-md) var(--spacing-xl);
+    gap: var(--spacing-xl);
+  }
+}
+
+/* ========================================
+   超大屏幕 (1600px 以上)
+   ======================================== */
+
+@media screen and (min-width: 1600px) {
+  :root {
+    --font-size-base: 1.125rem;
+    --font-size-md: 1.25rem;
+    --font-size-lg: 1.5rem;
+    --padding-page: 2.5rem;
+  }
+  
+  .page-content {
+    max-width: 1000px;
+  }
+  
+  .cover-title {
+    font-size: calc(var(--font-size-4xl) * 1.3);
+  }
+}
+
+/* ========================================
+   4K屏幕 (1920px 以上)
+   ======================================== */
+
+@media screen and (min-width: 1920px) {
+  :root {
+    --font-size-base: 1.1875rem;
+    --font-size-md: 1.375rem;
+    --font-size-lg: 1.625rem;
+    --padding-page: 3rem;
+  }
+  
+  .page-content {
+    max-width: 1100px;
+  }
+  
+  .cover-title {
+    font-size: calc(var(--font-size-4xl) * 1.4);
+  }
+  
+  .chapter-title {
+    font-size: calc(var(--font-size-2xl) * 1.2);
   }
 }
 
 /* ========================================
    触摸设备优化
-   Requirements: 5.4, 5.5
-   - 5.4: 支持触摸滑动翻页手势
-   - 5.5: 确保导航按钮触摸区域≥44px
-   
-   Property 8: 触摸区域最小尺寸
-   For any 导航按钮元素，其可点击区域的宽度和高度都应不小于44px。
-   Validates: Requirements 5.5
    ======================================== */
 
 @media (hover: none) and (pointer: coarse) {
-  /* 触摸设备上增大点击区域 - Requirement 5.5 */
   .nav-btn,
   .toc-chapter-link,
   .cover-enter-btn,
@@ -725,25 +525,12 @@ body[data-view-mode="double"] .page-right {
     min-width: var(--touch-target-min);
   }
   
-  /* 确保导航按钮触摸区域足够大 - Property 8 */
-  .nav-btn {
-    /* 确保宽度和高度都至少为44px */
-    width: max(var(--touch-target-min), 44px);
-    height: max(var(--touch-target-min), 80px);
-    min-width: 44px;
-    min-height: 44px;
-    /* 增加触摸区域的内边距 */
-    padding: var(--spacing-sm);
-  }
-  
-  /* 移除悬停效果 */
   .nav-btn:hover,
   .toc-chapter-link:hover,
   .cover-enter-btn:hover {
     transform: none;
   }
   
-  /* 添加触摸反馈 */
   .nav-btn:active,
   .toc-chapter-link:active,
   .cover-enter-btn:active {
@@ -751,24 +538,10 @@ body[data-view-mode="double"] .page-right {
     transform: scale(0.98);
   }
   
-  /* 触摸滑动区域配置 - Requirement 5.4 */
   .book-content {
-    /* 允许水平滑动手势，禁止浏览器默认的水平滚动 */
     touch-action: pan-y pinch-zoom;
-    /* 防止触摸时的文本选择 */
     -webkit-user-select: none;
     user-select: none;
-  }
-  
-  /* 触摸活动状态反馈 */
-  .book-content.touch-active {
-    /* 触摸时的视觉反馈 */
-    opacity: 0.98;
-  }
-  
-  /* 页面滑动过渡 */
-  .page-right {
-    transition: transform 0.1s ease-out;
   }
 }
 
@@ -791,10 +564,6 @@ body[data-view-mode="double"] .page-right {
     box-shadow: none;
   }
   
-  .page {
-    page-break-after: always;
-  }
-  
   body {
     background: white;
   }
@@ -812,90 +581,26 @@ body[data-view-mode="double"] .page-right {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
-  .loading-page,
-  .loading-text {
-    animation: none;
-  }
-  
-  .flip-to-left,
-  .flip-to-right,
-  .page-slide-left,
-  .page-slide-right,
-  .page-slide-in-left,
-  .page-slide-in-right {
-    animation: none;
-  }
 }
 
-/* ========================================
-   高对比度模式
-   ======================================== */
 
-@media (prefers-contrast: high) {
-  :root {
-    --color-ink: #000000;
-    --color-paper: #FFFFFF;
-    --color-accent: #6B3410;
-    --border-color: #000000;
-  }
-  
-  .page,
-  .book-toc,
-  .book-cover {
-    border: 2px solid var(--color-ink);
-  }
+/* 确保目录内容可见 */
+.toc-section {
+  display: block !important;
+  visibility: visible !important;
 }
 
-/* ========================================
-   深色模式支持 (可选)
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-  /* 
-   * 注意: 图书风格通常使用浅色纸张背景
-   * 如需支持深色模式，可取消以下注释
-   */
-  /*
-  :root {
-    --color-paper: #2C2416;
-    --color-paper-light: #3A3020;
-    --color-paper-dark: #1E1810;
-    --color-ink: #E8E0D0;
-    --color-ink-light: #D4C4A8;
-    --color-ink-muted: #A89880;
-  }
-  */
+.toc-chapter-list {
+  display: block !important;
+  visibility: visible !important;
 }
 
-/* ========================================
-   横屏模式 (移动设备)
-   ======================================== */
+.toc-chapter-item {
+  display: list-item !important;
+  visibility: visible !important;
+}
 
-@media screen and (max-width: 767px) and (orientation: landscape) {
-  .book-cover {
-    min-height: auto;
-    height: 100vh;
-  }
-  
-  .cover-content {
-    padding: var(--spacing-md);
-  }
-  
-  .cover-title {
-    font-size: var(--font-size-2xl);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .cover-subtitle {
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .cover-decoration {
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .page-inner {
-    padding-bottom: calc(var(--spacing-md) + 50px);
-  }
+.toc-chapter-link {
+  display: flex !important;
+  visibility: visible !important;
 }

@@ -20,9 +20,13 @@ const matrix = [
 
 <p>这是理解矩阵最重要的思维方式：<strong>矩阵就是一个函数</strong>。</p>
 
+<p>在图形学中，我们可以把矩阵理解为一个函数：输入一个点的坐标，输出另一个点的坐标。更准确地说，矩阵表示的是一类<strong>线性或仿射函数</strong>。</p>
+
 <blockquote>
-<p>想象你有一个神奇的机器，你把一个点的坐标放进去，它就会吐出一个新的坐标。这个机器就是矩阵！输入一个位置，输出另一个位置。</p>
+<p>有趣的是，矩阵最初并不是为图形学而发明的。在数学史上，它们被引入的目的，是为了系统地求解<strong>多元一次（线性）方程组</strong>（永乐大帝李永乐的课程中有过介绍）。后来人们发现，空间中的平移、旋转、缩放等变换，本质上恰好也是这一类函数。</p>
 </blockquote>
+
+<p>想象你有一个神奇的机器，你把一个点的坐标放进去，它就会吐出一个新的坐标。这个机器就是矩阵！输入一个位置，输出另一个位置。</p>
 
 <pre><code class="language-javascript">// 矩阵就像一个函数
 function matrixTransform(inputPoint, matrix) {
@@ -123,6 +127,54 @@ const combined = multiplyMatrices(translate, scale);
 
 <blockquote>
 <p>这就像是把多个函数合并成一个。f(g(x)) 可以变成 h(x)，其中 h = f ∘ g。矩阵乘法就是在做这种"函数组合"！</p>
+</blockquote>
+
+<h3>函数嵌套 vs 矩阵乘法</h3>
+
+<p>让我们用一个具体的例子来对比这两种写法：</p>
+
+<div class="key-concept">
+<p><strong>核心等价关系</strong></p>
+<p>假设 A = 移动 × 旋转 × 缩放，那么：</p>
+<p style="text-align: center; font-size: 1.1em;"><code>A × pos</code> = <code>移动(旋转(缩放(pos)))</code></p>
+</div>
+
+<pre><code class="language-javascript">// 方式一：函数嵌套（从内到外执行）
+function transformWithFunctions(pos) {
+  // 先缩放
+  let result = scale(pos, 2, 2, 2);
+  // 再旋转
+  result = rotate(result, 45);
+  // 最后平移
+  result = translate(result, 10, 0, 0);
+  return result;
+}
+
+// 等价于一行：
+// translate(rotate(scale(pos, 2, 2, 2), 45), 10, 0, 0)
+// 注意：最内层的函数最先执行！</code></pre>
+
+<pre><code class="language-javascript">// 方式二：矩阵乘法（从右到左组合）
+const S = createScaleMatrix(2, 2, 2);      // 缩放矩阵
+const R = createRotationMatrix(45);         // 旋转矩阵
+const T = createTranslationMatrix(10, 0, 0); // 平移矩阵
+
+// 组合矩阵：T × R × S
+// 注意：最右边的矩阵最先作用于点！
+const A = multiply(T, multiply(R, S));
+
+// 变换点
+const result = A * pos;  // 一次矩阵乘法搞定！</code></pre>
+
+<p>两种方式的执行顺序是一样的：<strong>缩放 → 旋转 → 平移</strong>。区别在于：</p>
+
+<ul>
+  <li>函数嵌套：从内到外读，最内层先执行</li>
+  <li>矩阵乘法：从右到左读，最右边先作用</li>
+</ul>
+
+<blockquote>
+<p>矩阵的优势：组合矩阵 A 只需要计算一次，之后对每个顶点只需一次矩阵乘法。如果模型有10000个顶点，函数嵌套要调用30000次函数，而矩阵只需10000次乘法！</p>
 </blockquote>
 
 <h3>为什么用矩阵而不是直接计算？</h3>

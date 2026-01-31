@@ -175,10 +175,14 @@ const RefractionDemo = {
     ctx.beginPath();
     
     if (isAbove) {
-      // 入射角（在界面上方，从法线到入射光线）
-      ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + angle);
+      // 入射角（在界面上方，从入射光线到法线）
+      // 入射光线从左上方来，法线向上（-π/2）
+      ctx.arc(x, y, radius, -Math.PI / 2 - angle, -Math.PI / 2);
     } else {
       // 折射角（在界面下方，从法线到折射光线）
+      // 折射光线向右下方（在法线右边）
+      // Canvas角度：π/2是正下方，向右是减小角度
+      // 所以从 π/2 - angle 画到 π/2
       ctx.arc(x, y, radius, Math.PI / 2 - angle, Math.PI / 2);
     }
     ctx.stroke();

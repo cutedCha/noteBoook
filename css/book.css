@@ -2389,3 +2389,54 @@ code:not(pre code):not(.code-block code) {
     font-size: 10px;
   }
 }
+
+
+/* 答案展开样式 */
+.answer-reveal {
+  margin-top: 1rem;
+  border: 1px solid var(--color-ink-light);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.answer-reveal summary {
+  padding: 0.75rem 1rem;
+  background: var(--color-paper-dark);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.answer-reveal summary:hover {
+  background: var(--color-ink-light);
+}
+
+.answer-reveal[open] summary {
+  border-bottom: 1px solid var(--color-ink-light);
+}
+
+.answer-content {
+  padding: 1rem;
+  background: var(--color-paper);
+}
+
+.answer-content pre {
+  background: #2d2d2d;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+
+.answer-content pre code {
+  color: #f8f8f2;
+}
+
+.answer-content ol {
+  padding-left: 1.5rem;
+}
+
+.answer-content li {
+  margin-bottom: 0.5rem;
+}

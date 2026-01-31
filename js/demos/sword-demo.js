@@ -14,12 +14,22 @@ const SwordDemo = {
   // 特效开关
   outlineEnabled: true,
   bloomEnabled: true,
+  noiseEnabled: false,  // 仙气飘飘效果
   
   // 特效参数
   outlineColor: { r: 0, g: 200, b: 255 },  // 青色
   outlineWidth: 3,
   bloomIntensity: 0.8,
   bloomRadius: 8,
+  
+  // 噪音参数
+  noiseScale: 0.05,      // 噪音缩放（更大的值=更细腻的扭曲）
+  noiseSpeed: 2.0,       // 流动速度
+  noiseOffset: 0,        // UV偏移（向上流动）
+  
+  // 噪声排列表
+  permutation: null,
+  gradients: null,
   
   // 动画
   animationFrame: null,
@@ -36,6 +46,9 @@ const SwordDemo = {
     this.ctx = this.canvas.getContext('2d');
     this.width = this.canvas.width;
     this.height = this.canvas.height;
+    
+    // 初始化噪声表
+    this.initPermutation();
     
     // 绑定控件
     this.bindControls();
@@ -54,6 +67,8 @@ const SwordDemo = {
     
     function animate() {
       self.glowPhase += 0.05;
+      // 噪音UV向上流动
+      self.noiseOffset += self.noiseSpeed * 0.02;
       self.draw();
       self.animationFrame = requestAnimationFrame(animate);
     }
@@ -177,17 +192,18 @@ const SwordDemo = {
    */
   drawOutline: function(ctx, x, y) {
     const { r, g, b } = this.outlineColor;
-    const pulseIntensity = 0.7 + 0.3 * Math.sin(this.glowPhase);
+    // 仙气飘飘模式下不闪烁
+    const basePulse = this.noiseEnabled ? 1.0 : (0.7 + 0.3 * Math.sin(this.glowPhase));
     
     ctx.save();
     ctx.translate(x, y);
     
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${pulseIntensity})`;
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${basePulse})`;
     ctx.lineWidth = this.outlineWidth;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     
-    // 剑刃描边
+    // 普通描边（不扭曲）
     ctx.beginPath();
     ctx.moveTo(0, -70);
     ctx.lineTo(8, -50);
@@ -197,18 +213,153 @@ const SwordDemo = {
     ctx.closePath();
     ctx.stroke();
     
-    // 护手描边
     ctx.strokeRect(-20, 20, 40, 8);
-    
-    // 剑柄描边
     ctx.strokeRect(-5, 28, 10, 35);
     
-    // 剑柄底部描边
     ctx.beginPath();
     ctx.arc(0, 68, 6, 0, Math.PI * 2);
     ctx.stroke();
     
     ctx.restore();
+  },
+  
+  /**
+   * 绘制扭曲的路径
+   */
+  drawDistortedPath: function(ctx, points, strength, closePath) {
+    const subSegments = 10;
+    
+    ctx.beginPath();
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      
+      for (let j = 0; j <= subSegments; j++) {
+        const t = j / subSegments;
+        let x = p1.x + (p2.x - p1.x) * t;
+        let y = p1.y + (p2.y - p1.y) * t;
+        
+        // 用噪音扭曲位置，UV向上流动
+        const noiseX = this.fbmNoise(x * this.noiseScale, y * this.noiseScale + this.noiseOffset);
+        const noiseY = this.fbmNoise(x * this.noiseScale + 100, y * this.noiseScale + this.noiseOffset);
+        
+        // 扭曲偏移（-0.5到0.5映射到-strength到+strength）
+        x += (noiseX - 0.5) * strength * 2;
+        y += (noiseY - 0.5) * strength;
+        
+        if (i === 0 && j === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+    }
+    
+    if (closePath) {
+      ctx.closePath();
+    }
+    ctx.stroke();
+  },
+  
+  /**
+   * 绘制扭曲的圆
+   */
+  drawDistortedCircle: function(ctx, cx, cy, radius, strength) {
+    const segments = 16;
+    
+    ctx.beginPath();
+    
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      let x = cx + Math.cos(angle) * radius;
+      let y = cy + Math.sin(angle) * radius;
+      
+      const noiseX = this.fbmNoise(x * this.noiseScale, y * this.noiseScale + this.noiseOffset);
+      const noiseY = this.fbmNoise(x * this.noiseScale + 100, y * this.noiseScale + this.noiseOffset);
+      
+      x += (noiseX - 0.5) * strength * 2;
+      y += (noiseY - 0.5) * strength;
+      
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    
+    ctx.closePath();
+    ctx.stroke();
+  },
+  
+  /**
+   * 初始化噪声排列表
+   */
+  initPermutation: function() {
+    const p = [];
+    for (let i = 0; i < 256; i++) p[i] = i;
+    
+    // Fisher-Yates洗牌
+    let seed = 12345;
+    for (let i = 255; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      const j = seed % (i + 1);
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    
+    this.permutation = new Array(512);
+    for (let i = 0; i < 512; i++) {
+      this.permutation[i] = p[i & 255];
+    }
+    
+    this.gradients = [
+      [1, 1], [-1, 1], [1, -1], [-1, -1],
+      [1, 0], [-1, 0], [0, 1], [0, -1]
+    ];
+  },
+  
+  /**
+   * 平滑插值
+   */
+  smoothstep: function(t) {
+    return t * t * (3 - 2 * t);
+  },
+  
+  /**
+   * 线性插值
+   */
+  lerp: function(a, b, t) {
+    return a + t * (b - a);
+  },
+  
+  /**
+   * Perlin噪声
+   */
+  perlinNoise: function(x, y) {
+    const xi = Math.floor(x) & 255;
+    const yi = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    
+    const u = this.smoothstep(xf);
+    const v = this.smoothstep(yf);
+    
+    const aa = this.permutation[this.permutation[xi] + yi] & 7;
+    const ab = this.permutation[this.permutation[xi] + yi + 1] & 7;
+    const ba = this.permutation[this.permutation[xi + 1] + yi] & 7;
+    const bb = this.permutation[this.permutation[xi + 1] + yi + 1] & 7;
+    
+    const dot = (g, px, py) => this.gradients[g][0] * px + this.gradients[g][1] * py;
+    
+    const n00 = dot(aa, xf, yf);
+    const n10 = dot(ba, xf - 1, yf);
+    const n01 = dot(ab, xf, yf - 1);
+    const n11 = dot(bb, xf - 1, yf - 1);
+    
+    const nx0 = this.lerp(n00, n10, u);
+    const nx1 = this.lerp(n01, n11, u);
+    
+    return (this.lerp(nx0, nx1, v) + 1) * 0.5;
   },
 
   /**
@@ -216,45 +367,114 @@ const SwordDemo = {
    */
   drawBloom: function(ctx, x, y) {
     const { r, g, b } = this.outlineColor;
-    const pulseIntensity = 0.5 + 0.5 * Math.sin(this.glowPhase);
+    // 仙气飘飘模式下不闪烁
+    const pulseIntensity = this.noiseEnabled ? 1.0 : (0.5 + 0.5 * Math.sin(this.glowPhase));
     
     ctx.save();
     ctx.translate(x, y);
     
-    // 多层发光模拟Bloom
     const layers = 5;
-    for (let i = layers; i >= 1; i--) {
-      const radius = this.outlineWidth + this.bloomRadius * i * this.bloomIntensity;
-      const alpha = (0.15 / i) * pulseIntensity;
-      
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-      ctx.lineWidth = radius;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      
-      // 剑刃发光
-      ctx.beginPath();
-      ctx.moveTo(0, -70);
-      ctx.lineTo(8, -50);
-      ctx.lineTo(8, 20);
-      ctx.lineTo(-8, 20);
-      ctx.lineTo(-8, -50);
-      ctx.closePath();
-      ctx.stroke();
-      
-      // 护手发光
-      ctx.strokeRect(-20, 20, 40, 8);
-      
-      // 剑柄发光
-      ctx.strokeRect(-5, 28, 10, 35);
-      
-      // 剑柄底部发光
-      ctx.beginPath();
-      ctx.arc(0, 68, 6, 0, Math.PI * 2);
-      ctx.stroke();
+    
+    if (this.noiseEnabled) {
+      // 对扭曲后的描边做Bloom
+      for (let i = layers; i >= 1; i--) {
+        const radius = this.outlineWidth + this.bloomRadius * i * this.bloomIntensity;
+        const alpha = (0.15 / i) * pulseIntensity;
+        
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.lineWidth = radius;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        
+        this.drawDistortedBloomLayer(ctx);
+      }
+    } else {
+      // 普通Bloom
+      for (let i = layers; i >= 1; i--) {
+        const radius = this.outlineWidth + this.bloomRadius * i * this.bloomIntensity;
+        const alpha = (0.15 / i) * pulseIntensity;
+        
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.lineWidth = radius;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(0, -70);
+        ctx.lineTo(8, -50);
+        ctx.lineTo(8, 20);
+        ctx.lineTo(-8, 20);
+        ctx.lineTo(-8, -50);
+        ctx.closePath();
+        ctx.stroke();
+        
+        ctx.strokeRect(-20, 20, 40, 8);
+        ctx.strokeRect(-5, 28, 10, 35);
+        
+        ctx.beginPath();
+        ctx.arc(0, 68, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
     
     ctx.restore();
+  },
+  
+  /**
+   * 绘制扭曲的Bloom层
+   */
+  drawDistortedBloomLayer: function(ctx) {
+    const distortStrength = 8;  // 增大扭曲强度
+    
+    const bladePoints = [
+      { x: 0, y: -70 },
+      { x: 8, y: -50 },
+      { x: 8, y: 20 },
+      { x: -8, y: 20 },
+      { x: -8, y: -50 },
+      { x: 0, y: -70 }
+    ];
+    
+    const guardPoints = [
+      { x: -20, y: 20 },
+      { x: 20, y: 20 },
+      { x: 20, y: 28 },
+      { x: -20, y: 28 },
+      { x: -20, y: 20 }
+    ];
+    
+    const handlePoints = [
+      { x: -5, y: 28 },
+      { x: 5, y: 28 },
+      { x: 5, y: 63 },
+      { x: -5, y: 63 },
+      { x: -5, y: 28 }
+    ];
+    
+    this.drawDistortedPath(ctx, bladePoints, distortStrength, true);
+    this.drawDistortedPath(ctx, guardPoints, distortStrength * 0.5, true);
+    this.drawDistortedPath(ctx, handlePoints, distortStrength * 0.5, true);
+    this.drawDistortedCircle(ctx, 0, 68, 6, distortStrength * 0.3);
+  },
+  
+  /**
+   * FBM噪声（分形布朗运动）- 更自然的雾气效果
+   */
+  fbmNoise: function(x, y) {
+    let value = 0;
+    let amplitude = 1;
+    let frequency = 1;
+    let maxValue = 0;
+    const octaves = 3;
+    
+    for (let i = 0; i < octaves; i++) {
+      value += amplitude * this.perlinNoise(x * frequency, y * frequency);
+      maxValue += amplitude;
+      amplitude *= 0.5;
+      frequency *= 2;
+    }
+    
+    return value / maxValue;
   },
   
   /**
@@ -279,6 +499,14 @@ const SwordDemo = {
       });
     }
     
+    // 噪音开关（仙气飘飘）
+    const noiseToggle = document.getElementById('swordNoise');
+    if (noiseToggle) {
+      noiseToggle.addEventListener('change', function() {
+        self.noiseEnabled = this.checked;
+      });
+    }
+    
     // 描边宽度
     const widthSlider = document.getElementById('swordOutlineWidth');
     const widthValue = document.getElementById('swordOutlineWidthValue');
@@ -296,6 +524,16 @@ const SwordDemo = {
       bloomSlider.addEventListener('input', function() {
         self.bloomIntensity = parseFloat(this.value);
         if (bloomValue) bloomValue.textContent = self.bloomIntensity.toFixed(1);
+      });
+    }
+    
+    // 噪音流动速度
+    const noiseSpeedSlider = document.getElementById('swordNoiseSpeed');
+    const noiseSpeedValue = document.getElementById('swordNoiseSpeedValue');
+    if (noiseSpeedSlider) {
+      noiseSpeedSlider.addEventListener('input', function() {
+        self.noiseSpeed = parseFloat(this.value);
+        if (noiseSpeedValue) noiseSpeedValue.textContent = self.noiseSpeed.toFixed(1);
       });
     }
     

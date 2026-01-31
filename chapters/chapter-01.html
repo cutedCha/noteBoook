@@ -2,9 +2,39 @@
 
 <p>你有没有想过，我们的眼睛是如何看到这个世界的？其实，眼睛就像一台精密的照相机，而这一切的秘密，都藏在一个小小的透镜里。</p>
 
-<h3>🎮 动手试试：凸透镜成像</h3>
+<h3>满级大佬回顾新手村</h3>
 
-<p>拖动下面的<strong>红色箭头（物体）</strong>，观察成像的变化。调节焦距滑块，看看焦距如何影响成像：</p>
+<p>很多初中课本讲凸透镜成像讲得太抽象了。什么"物距"、"像距"、"焦距"，一堆公式往上堆，但从来不告诉你<strong>为什么</strong>。</p>
+
+<p>初中生的大脑，抽象思维和3D空间模拟能力还没发育完全，硬背公式当然记不住。现在我们是"满级大佬"了，让我们回到新手村，用两种直观的方式重新理解这个"小怪"。</p>
+
+<h3>🎮 单条光线的折射</h3>
+
+<p>先忘掉复杂的成像，就看<strong>一条光线</strong>穿过透镜会发生什么。拖动滑块调节光线的高度：</p>
+
+<div class="interactive-demo" id="refraction-demo-new" data-demo="lens-refraction">
+  <canvas id="refractionDemoCanvas" width="350" height="200"></canvas>
+  <div class="demo-controls">
+    <div class="control-group">
+      <label>光线高度 Y = <span id="rayYValue">50</span></label>
+      <input type="range" id="rayYSlider" min="0" max="70" value="50">
+    </div>
+  </div>
+</div>
+
+<blockquote>
+  <p>💡 <strong>关键发现</strong>：</p>
+  <ul>
+    <li>光线<strong>平行于光轴</strong>（Y=0）时，几乎不折射，直直穿过</li>
+    <li>光线<strong>离光轴越远</strong>（Y越大），入射角越大，折射越明显</li>
+    <li>这就是<strong>斯涅尔定律</strong>：入射角越大，折射角越大</li>
+    <li>所以边缘的光线会被"掰"得更厉害，最终汇聚到一点！</li>
+  </ul>
+</blockquote>
+
+<h3>🎮 完整演示：凸透镜成像</h3>
+
+<p>现在理解了原理，再来看完整的成像过程。拖动<strong>红色箭头（物体）</strong>，观察成像的变化：</p>
 
 <div class="interactive-demo" id="lens-demo" data-demo="lens">
   <canvas id="lensCanvas" width="600" height="300"></canvas>
@@ -40,7 +70,7 @@
 
 <p>这里有一个有趣的事实：<strong>你眼睛里看到的世界，其实是倒过来的！</strong></p>
 
-<p>没错，当光线穿过眼睛的晶状体（就是那个透镜）时，会发生一种叫做"折射"的现象。就像你把筷子插进水杯里，筷子看起来会"弯折"一样，光线在穿过透镜时也会改变方向。</p>
+<p>没错，当光线穿过眼睛的晶状体（就是那个透镜）时，会发生折射。物体发出的光线，经过晶状体的"掰弯"，最后在视网膜上形成一个倒立的小图像。</p>
 
 <blockquote>
 <p>想象一下：你站在窗前看外面的风景，阳光从树上反射出来，穿过你的眼睛，最后在视网膜上形成一个倒立的小图像。这就是上面演示中"像"的样子！</p>
@@ -65,11 +95,12 @@
 
 <h3>小结</h3>
 
-<p>在这一章中，我们了解了：</p>
+<p>在这一章中，我们用两种直观的方式理解了凸透镜：</p>
 
 <ol>
-  <li>眼睛通过透镜（晶状体）来成像</li>
-  <li>透镜成像会产生倒立的图像</li>
+  <li><strong>单光线视角</strong>：入射角越大，折射越明显</li>
+  <li><strong>分段透镜视角</strong>：透镜是由不同角度的斜面组成的</li>
+  <li>眼睛通过透镜（晶状体）来成像，图像是倒立的</li>
   <li>大脑会自动"翻转"图像，让我们看到正常的世界</li>
 </ol>
 

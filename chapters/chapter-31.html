@@ -35,6 +35,10 @@
             <input type="checkbox" id="swordBloom" checked>
             <span>Bloom发光</span>
           </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="swordNoise">
+            <span>仙气飘飘</span>
+          </label>
         </div>
         <div class="button-row">
           <span class="button-label">颜色：</span>
@@ -52,6 +56,10 @@
           <label>发光强度：<span id="swordBloomIntensityValue">0.8</span></label>
           <input type="range" id="swordBloomIntensity" min="0.2" max="1.5" step="0.1" value="0.8">
         </div>
+        <div class="control-group">
+          <label>仙气速度：<span id="swordNoiseSpeedValue">2.0</span></label>
+          <input type="range" id="swordNoiseSpeed" min="0.5" max="5.0" step="0.5" value="2.0">
+        </div>
       </div>
     </div>
     
@@ -60,8 +68,9 @@
       <ul>
         <li>只开<strong>描边</strong>：剑有了轮廓光，但不够炫</li>
         <li>加上<strong>Bloom</strong>：描边开始发光，变成魔法武器！</li>
+        <li>开启<strong>仙气飘飘</strong>：噪音扭曲发光层，光芒如仙气般向上飘动</li>
         <li>调节<strong>颜色</strong>：不同颜色代表不同属性（冰、火、雷...）</li>
-        <li>这就是<strong>描边 + Bloom = 发光描边</strong>的魔法！</li>
+        <li>这就是<strong>描边 + Bloom + 噪音扭曲 = 仙气飘飘</strong>的魔法！</li>
       </ul>
     </blockquote>
     
@@ -199,6 +208,55 @@ if (亮度 > 阈值) {
         <li>面对复杂问题：拆解 → 理解 → 组合</li>
         <li>图形学的哲学：复杂皆由简单构成</li>
       </ul>
+    </div>
+    
+    <div class="life-analogy">
+      <h4>🤔 思考题：残影无双是怎么做的？</h4>
+      <p>在很多动作游戏里，角色快速移动或释放技能时会留下一串"残影"，看起来非常帅气。</p>
+      <p>想一想：这个效果是怎么实现的？</p>
+      <p><strong>小提示：</strong></p>
+      <ul>
+        <li>残影看起来像是"过去的自己"</li>
+        <li>每个残影的透明度好像不太一样...</li>
+        <li>残影会随时间慢慢消失</li>
+        <li>想想看，如果你每隔几帧"记住"角色的位置和姿态...</li>
+      </ul>
+      <p><em>答案就藏在你学过的知识里，试着自己推导出来吧！</em></p>
+      
+      <details class="answer-reveal">
+        <summary>🔍 点击查看答案</summary>
+        <div class="answer-content">
+          <p><strong>残影效果的核心思想：一张图 + 不断衰减</strong></p>
+          
+          <p>最简单高效的做法：</p>
+          <ol>
+            <li>准备一张 RenderTexture（残影图）</li>
+            <li>每帧把残影图以略低的透明度（如 0.9）画回自己身上（自我衰减）</li>
+            <li>把当前角色画到残影图上</li>
+            <li>把残影图叠加到屏幕</li>
+          </ol>
+          
+          <pre><code>// 每帧执行
+// 1. 残影图自我衰减（旧的内容变淡）
+ghostRT.drawSelf(alpha = 0.9);
+
+// 2. 把角色画上去（新的残影）
+ghostRT.draw(player);
+
+// 3. 显示到屏幕
+screen.draw(ghostRT);</code></pre>
+          
+          <p><strong>为什么这样就能产生残影？</strong></p>
+          <ul>
+            <li>第1帧画的角色，经过N帧后透明度变成 0.9^N，越来越淡</li>
+            <li>最新画的角色透明度是1，最清晰</li>
+            <li>自然形成"拖尾"效果！</li>
+          </ul>
+          
+          <p><strong>性能优势：</strong>只需要一张额外的纹理，不用存储历史帧数据，GPU 友好。</p>
+          <p>看，又是简单效果的组合：<strong>渲染到纹理 + 自我衰减 = 残影效果</strong>！</p>
+        </div>
+      </details>
     </div>
     
     <hr>

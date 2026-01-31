@@ -39,13 +39,11 @@ const BookUI = {
   
   /**
    * 检测并设置视图模式
-   * Requirements: 5.1, 5.2
-   * - 5.1: 屏幕宽度小于768px时切换为单页视图模式
-   * - 5.2: 屏幕宽度大于等于768px时显示双页书籍视图
+   * 始终使用单页模式，全屏显示
    */
   detectViewMode: function() {
-    const width = window.innerWidth;
-    const newMode = width < 768 ? 'single' : 'double';
+    // 始终使用单页模式
+    const newMode = 'single';
     
     // 只有模式变化时才更新
     if (this.viewMode !== newMode) {
@@ -404,6 +402,14 @@ const BookUI = {
       }, 50);
     }
     
+    // 检查是否有透镜折射演示
+    const refractionDemoNew = document.getElementById('refraction-demo-new');
+    if (refractionDemoNew && typeof LensRefractionDemo !== 'undefined') {
+      setTimeout(function() {
+        LensRefractionDemo.init();
+      }, 50);
+    }
+    
     // 检查是否有光照模型演示
     const lightingDemo = document.getElementById('lighting-demo');
     if (lightingDemo && typeof LightingDemo !== 'undefined') {
@@ -558,7 +564,7 @@ const BookUI = {
     }
     if (nextBtn) {
       // 最后一章禁用下一章按钮
-      nextBtn.disabled = currentChapterNumber >= 31;
+      nextBtn.disabled = currentChapterNumber >= 32;
     }
   },
   

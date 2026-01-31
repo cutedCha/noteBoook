@@ -2,13 +2,32 @@
 
 <p>在第6章，我们学习了DrawCall（DC）是什么。现在让我们深入了解一个重要的优化技巧：<strong>合并DrawCall</strong>。这是游戏性能优化中最常用的手段之一。</p>
 
+<div class="key-point">
+  <h4>💡 核心概念</h4>
+  <p>合并 DC 的核心不是"把网格拼大"，而是<strong>减少状态切换</strong>。</p>
+  <p>常见的优化路径是：<strong>先减少材质种类</strong>（图集/统一 shader），<strong>再考虑合批或 instancing</strong>。</p>
+</div>
+
 <h3>为什么要合并DC？</h3>
 
-<p>每次DrawCall都需要CPU和GPU之间进行通信，这个过程是有开销的。</p>
+<p>每次 DrawCall 都会带来 CPU 侧的提交开销、状态切换开销和驱动开销。</p>
 
 <blockquote>
 <p>想象你在网上购物：如果你买10件东西，分10个订单下单，快递员要跑10趟；但如果合并成1个订单，快递员只需要跑1趟。合并DC就是这个道理——<strong>减少"跑腿"的次数</strong>。</p>
 </blockquote>
+
+<div class="life-analogy">
+  <h4>🎨 古老的智慧：日本神社的印刷术</h4>
+  <figure style="text-align: center; margin: 1rem 0;">
+    <img src="../assets/images/jap.png" alt="日本传统印刷画" style="max-width: 100%; border-radius: 8px;">
+    <figcaption style="color: var(--color-ink-muted); font-size: 0.9em; margin-top: 0.5rem;">日本传统木版印刷</figcaption>
+  </figure>
+  <p>这是日本的一种传统印刷画。神社的和尚会给人们发放祈福的卡片。</p>
+  <p>想象一下，如果每个图案都要单独盖一次章，那和尚们不得累死？一张卡片上有几十个小图案，每个都盖一次，一天下来手都要废了。</p>
+  <p>聪明的和尚发现了一个技巧：<strong>把同一种颜色的图案刻在同一块木板上</strong>。这样印一张卡片只需要盖四次章（四种颜色），而不是几十次。</p>
+  <p>和尚们很快就下班了。</p>
+  <p><strong>这就是合并DC的古老智慧！</strong>同一材质（颜色）的东西放在一起处理，大大减少了"盖章"（DrawCall）的次数。</p>
+</div>
 
 <pre><code class="language-javascript">// 未优化：每个物体一个DrawCall
 function renderWithoutBatching(objects) {
@@ -35,16 +54,18 @@ function renderWithBatching(objects) {
 
 <h3>合并的前提条件</h3>
 
-<p>并不是所有物体都能合并，需要满足一些条件：</p>
+<p>要合并 DrawCall，需要满足一些条件：</p>
 
 <ul>
-  <li><strong>相同的材质</strong>：使用同一个shader和纹理</li>
+  <li><strong>相同的 Shader</strong>：使用同一个着色器程序</li>
   <li><strong>相同的渲染状态</strong>：混合模式、深度测试等设置相同</li>
   <li><strong>静态物体</strong>：位置不会改变（对于静态合批）</li>
 </ul>
 
+<p>注意：材质参数的差异（比如不同颜色、不同纹理）有时也能合并，只要使用同一个 Shader，通过不同的 uniform 或 instance data 来区分即可。这就是 GPU Instancing 的原理。</p>
+
 <blockquote>
-<p>这就像是拼车：只有目的地相同（材质相同）、出发时间相近（渲染状态相同）的人才能拼在一起。</p>
+<p>这就像是拼车：只要目的地方向相同（Shader 相同）、走同一条路（渲染状态相同），即使每个人要去的具体地点不同（材质参数不同），也可以拼在一起。</p>
 </blockquote>
 
 <h3>静态合批 vs 动态合批</h3>
@@ -167,12 +188,24 @@ function renderWithInstancing(mesh, material, transforms) {
 
 <h3>实际优化建议</h3>
 
+<p>按优先级排序：</p>
+
 <ol>
-  <li><strong>使用图集（Atlas）</strong>：把多张小纹理合并成一张大纹理</li>
-  <li><strong>合理规划材质</strong>：尽量让相似物体使用相同材质</li>
-  <li><strong>标记静态物体</strong>：不会移动的物体标记为静态</li>
-  <li><strong>使用LOD</strong>：远处的物体用简化模型</li>
+  <li><strong>减少材质种类</strong>：这是最重要的一步！
+    <ul>
+      <li>使用图集（Atlas）：把多张小纹理合并成一张大纹理</li>
+      <li>统一 Shader：尽量让相似物体使用相同的着色器</li>
+    </ul>
+  </li>
+  <li><strong>合理规划渲染状态</strong>：减少混合模式、深度测试等状态的切换</li>
+  <li><strong>静态合批</strong>：不会移动的物体标记为静态，预先合并</li>
+  <li><strong>GPU Instancing</strong>：大量相同网格的物体用 instancing</li>
+  <li><strong>使用LOD</strong>：远处的物体用简化模型，减少顶点数</li>
 </ol>
+
+<blockquote>
+<p>记住：先减少状态切换的次数，再考虑怎么合并网格。顺序很重要！</p>
+</blockquote>
 
 <h3>小结</h3>
 
